@@ -1,0 +1,17 @@
+{
+  "app.name": "SupportOne",
+  "app.tagline": "Reads your computer, explains what it finds, changes nothing without asking.",
+
+  "severity.ok": "OK",
+  "severity.attention": "Needs attention",
+  "severity.urgent": "Urgent",
+  "severity.unknown": "Could not check",
+
+  "agent.build.unsigned": "This is an unsigned development build.",
+  "agent.checks.none": "This build has no diagnostic checks compiled in yet.",
+  "agent.checks.available": "%d checks are available on %s.",
+  "agent.checks.requires_admin": "needs administrator rights",
+  "agent.dry_run.active": "Dry run: nothing on this computer will be changed.",
+  "agent.audit.location": "Audit log: %s",
+  "agent.platform.unsupported": "The SupportOne agent runs on Windows, macOS and Linux. This computer is not one of them."
+}

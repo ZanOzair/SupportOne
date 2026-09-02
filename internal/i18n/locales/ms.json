@@ -1,0 +1,17 @@
+{
+  "app.name": "SupportOne",
+  "app.tagline": "Membaca komputer anda, menerangkan apa yang ditemui, tidak mengubah apa-apa tanpa kebenaran anda.",
+
+  "severity.ok": "Baik",
+  "severity.attention": "Perlu perhatian",
+  "severity.urgent": "Mendesak",
+  "severity.unknown": "Tidak dapat diperiksa",
+
+  "agent.build.unsigned": "Ini ialah binaan pembangunan yang tidak ditandatangani.",
+  "agent.checks.none": "Binaan ini belum mempunyai sebarang pemeriksaan diagnostik.",
+  "agent.checks.available": "%d pemeriksaan tersedia pada %s.",
+  "agent.checks.requires_admin": "memerlukan hak pentadbir",
+  "agent.dry_run.active": "Larian ujian: tiada apa-apa pada komputer ini akan diubah.",
+  "agent.audit.location": "Log audit: %s",
+  "agent.platform.unsupported": "Ejen SupportOne berjalan pada Windows, macOS dan Linux. Komputer ini bukan salah satu daripadanya."
+}

@@ -1,0 +1,18 @@
+# Build output (anchored: the cmd/ source directories share these names)
+/dist/
+/bin/
+/supportone-agent
+/supportone-server
+*.exe
+
+# Go
+*.test
+*.out
+
+# Node (agent UI and dashboard, from Phase 1)
+node_modules/
+.vite/
+
+# Local environment
+.env
+.DS_Store

@@ -1,0 +1,50 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - bodyclose
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+
+  settings:
+    errcheck:
+      # Writing the report to stdout: a failed write to the terminal cannot be
+      # reported to the terminal, and the audit log records the run regardless.
+      # Every other error return stays checked.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+    gosec:
+      # G204 (command construction) is not excluded anywhere: fixes and checks
+      # run fixed, compiled-in commands, never strings assembled at runtime.
+      excludes: []
+    revive:
+      rules:
+        - name: exported
+          disabled: false
+
+  exclusions:
+    rules:
+      # Test helpers may ignore errors that production code must not.
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
