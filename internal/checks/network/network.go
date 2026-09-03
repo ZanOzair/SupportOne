@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // iface is one network interface as the user's machine sees it.

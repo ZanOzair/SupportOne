@@ -16,14 +16,14 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	_ "github.com/ZanOzair/supportone/internal/checks/all"
-	"github.com/ZanOzair/supportone/internal/consent"
-	"github.com/ZanOzair/supportone/internal/i18n"
-	"github.com/ZanOzair/supportone/internal/localui"
-	"github.com/ZanOzair/supportone/internal/platform"
-	"github.com/ZanOzair/supportone/internal/redact"
-	agentui "github.com/ZanOzair/supportone/web/agent-ui"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/all"
+	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/i18n"
+	"github.com/ZanOzair/SupportOne/internal/localui"
+	"github.com/ZanOzair/SupportOne/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/redact"
+	agentui "github.com/ZanOzair/SupportOne/web/agent-ui"
 )
 
 // Build metadata, set via -ldflags at release time. An unset version means an

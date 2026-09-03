@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // collectProblemDevices exists so the package builds everywhere, but the check

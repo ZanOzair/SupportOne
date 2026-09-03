@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // fixtureMachine writes a recorded /proc, /sys and /etc for one machine and

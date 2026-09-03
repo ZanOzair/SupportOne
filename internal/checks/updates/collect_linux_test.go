@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // runnerFor answers each command name with recorded output, and reports every

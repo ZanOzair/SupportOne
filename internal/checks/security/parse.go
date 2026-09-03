@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 )
 
 // parseFDESetup reads `fdesetup status`, which prints either

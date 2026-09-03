@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // Command names and arguments are compiled-in constants; see platform.RunRead.

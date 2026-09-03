@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // autostartDirs are the freedesktop locations that hold startup entries. The

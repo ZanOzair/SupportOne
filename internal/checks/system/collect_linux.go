@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // Roots are variables so tests can point them at recorded /proc and /sys trees.

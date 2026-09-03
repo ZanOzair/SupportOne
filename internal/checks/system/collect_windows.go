@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // The PowerShell invocations below are compiled-in constants. Nothing in them

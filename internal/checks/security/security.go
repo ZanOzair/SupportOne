@@ -8,8 +8,8 @@ package security
 import (
 	"context"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // state is a tri-state answer plus a fourth value for protections that do not

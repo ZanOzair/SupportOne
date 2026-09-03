@@ -10,8 +10,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // device is one entry Device Manager would show with a warning triangle.

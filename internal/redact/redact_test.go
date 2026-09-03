@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
 func testIdentity() Identity {

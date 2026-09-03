@@ -10,7 +10,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // Severity is the traffic-light verdict of a single check.

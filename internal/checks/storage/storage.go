@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // volume is one mounted filesystem the user would recognise as a drive.

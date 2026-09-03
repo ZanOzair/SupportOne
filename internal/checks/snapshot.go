@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // SnapshotSchema is the version of the JSON snapshot format. It changes only

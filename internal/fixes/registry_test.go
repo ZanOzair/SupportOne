@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 type stubFix struct {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 )
 
 // win32OperatingSystem mirrors the fields os.info selects from

@@ -3,7 +3,7 @@ package storage
 import (
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
 func TestVolumesVerdictThresholds(t *testing.T) {

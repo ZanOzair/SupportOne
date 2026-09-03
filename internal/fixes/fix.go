@@ -14,7 +14,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // Explanation is shown to the user before a fix runs, in plain language.

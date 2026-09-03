@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 )
 
 // countAptUpgrades counts the packages `apt-get -s upgrade` would install.

@@ -3,7 +3,7 @@ package network
 import (
 	"context"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // Compiled-in query; see platform.RunRead.

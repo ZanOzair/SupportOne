@@ -3,7 +3,7 @@ package storage
 import (
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 )
 
 // win32LogicalDisk mirrors the fields disk.volumes selects from

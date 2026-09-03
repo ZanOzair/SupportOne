@@ -3,7 +3,7 @@ package drivers
 import (
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 )
 
 // winPnPEntity mirrors the fields the check selects from Win32_PnPEntity.

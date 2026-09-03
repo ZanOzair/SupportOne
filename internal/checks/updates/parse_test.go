@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
 func TestCountAptUpgrades(t *testing.T) {

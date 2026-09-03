@@ -6,12 +6,12 @@
 package all
 
 import (
-	_ "github.com/ZanOzair/supportone/internal/checks/drivers"
-	_ "github.com/ZanOzair/supportone/internal/checks/events"
-	_ "github.com/ZanOzair/supportone/internal/checks/network"
-	_ "github.com/ZanOzair/supportone/internal/checks/security"
-	_ "github.com/ZanOzair/supportone/internal/checks/startup"
-	_ "github.com/ZanOzair/supportone/internal/checks/storage"
-	_ "github.com/ZanOzair/supportone/internal/checks/system"
-	_ "github.com/ZanOzair/supportone/internal/checks/updates"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/drivers"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/events"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/network"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/security"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/startup"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/storage"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/system"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/updates"
 )

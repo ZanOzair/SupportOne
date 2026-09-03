@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 )
 
 // maxMessageLength keeps a single log line from dominating a report. The full

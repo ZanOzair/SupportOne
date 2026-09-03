@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 const (

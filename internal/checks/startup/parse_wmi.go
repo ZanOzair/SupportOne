@@ -3,7 +3,7 @@ package startup
 import (
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 )
 
 // winStartupCommand mirrors the fields the check selects from

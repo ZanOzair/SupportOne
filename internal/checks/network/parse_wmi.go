@@ -4,7 +4,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/checks/cim"
+	"github.com/ZanOzair/SupportOne/internal/checks/cim"
 )
 
 // winRouting mirrors the composite object the Windows routing query builds

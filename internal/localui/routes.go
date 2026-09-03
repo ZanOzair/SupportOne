@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/consent"
-	"github.com/ZanOzair/supportone/internal/i18n"
-	"github.com/ZanOzair/supportone/internal/redact"
-	"github.com/ZanOzair/supportone/internal/report"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/i18n"
+	"github.com/ZanOzair/SupportOne/internal/redact"
+	"github.com/ZanOzair/SupportOne/internal/report"
 )
 
 func (s *Server) routes() http.Handler {

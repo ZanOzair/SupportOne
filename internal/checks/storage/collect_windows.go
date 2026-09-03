@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // Compiled-in queries; see platform.RunRead for why this is not shell

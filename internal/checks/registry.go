@@ -6,7 +6,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // idPattern constrains check IDs to lowercase dotted segments, e.g.

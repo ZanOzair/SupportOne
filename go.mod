@@ -1,4 +1,4 @@
-module github.com/ZanOzair/supportone
+module github.com/ZanOzair/SupportOne
 
 go 1.24.0
 

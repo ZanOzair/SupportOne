@@ -3,9 +3,9 @@ package all
 import (
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/i18n"
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/i18n"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // wantIDs is the full set of Phase 1 checks. The list is written out so that

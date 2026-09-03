@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/i18n"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/i18n"
 )
 
 //go:embed templates/*.gohtml

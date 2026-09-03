@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
 func writeDesktopEntry(t *testing.T, dir, name, content string) {

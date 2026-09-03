@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
 func TestVersionFlag(t *testing.T) {

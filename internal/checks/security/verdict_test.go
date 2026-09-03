@@ -3,7 +3,7 @@ package security
 import (
 	"testing"
 
-	"github.com/ZanOzair/supportone/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
 func TestPostureVerdict(t *testing.T) {

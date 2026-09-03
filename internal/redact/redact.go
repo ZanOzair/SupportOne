@@ -17,7 +17,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ZanOzair/supportone/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
 // Marker replaces a redacted value. It is deliberately visible: the reader of a

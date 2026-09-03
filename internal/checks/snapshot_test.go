@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 func TestRunAllNamesAdminChecksItSkipped(t *testing.T) {

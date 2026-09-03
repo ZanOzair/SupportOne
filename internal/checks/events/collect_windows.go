@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 // Compiled-in query; see platform.RunRead. Levels 1 and 2 are critical and

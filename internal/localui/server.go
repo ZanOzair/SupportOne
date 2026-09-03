@@ -25,10 +25,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ZanOzair/supportone/internal/checks"
-	"github.com/ZanOzair/supportone/internal/consent"
-	"github.com/ZanOzair/supportone/internal/platform"
-	"github.com/ZanOzair/supportone/internal/redact"
+	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/redact"
 )
 
 // DefaultIdleTimeout is how long the server waits with nobody using it before
