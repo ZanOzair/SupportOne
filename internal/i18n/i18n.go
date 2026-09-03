@@ -131,3 +131,17 @@ func (b *Bundle) T(key string, args ...any) string {
 	}
 	return fmt.Sprintf(msg, args...)
 }
+
+// Messages returns a copy of the catalog, with English filling any gap. The
+// local interface renders check results in the browser, so it needs the same
+// messages the Go side would use.
+func (b *Bundle) Messages() map[string]string {
+	out := make(map[string]string, len(b.fallback))
+	for key, value := range b.fallback {
+		out[key] = value
+	}
+	for key, value := range b.messages {
+		out[key] = value
+	}
+	return out
+}

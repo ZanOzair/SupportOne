@@ -64,9 +64,15 @@ func (c errorsCheck) Run(ctx context.Context) (checks.Result, error) {
 		return checks.UnknownFor(err), nil
 	}
 
+	return eventsVerdict(events, window), nil
+}
+
+// eventsVerdict looks for a component failing repeatedly rather than counting
+// errors, and is separate from collection so that rule can be tested directly.
+func eventsVerdict(events []logEvent, window time.Duration) checks.Result {
 	days := int(window.Hours() / 24)
 	if len(events) == 0 {
-		return checks.OK(keyEventsNone, days), nil
+		return checks.OK(keyEventsNone, days)
 	}
 
 	repeats := findRepetitions(events)
@@ -80,16 +86,16 @@ func (c errorsCheck) Run(ctx context.Context) (checks.Result, error) {
 	}
 
 	if critical := countCritical(events); critical > 0 {
-		return checks.Attention(checks.PluralKey(keyEventsCritical, critical), critical, days).With(detail), nil
+		return checks.Attention(checks.PluralKey(keyEventsCritical, critical), critical, days).With(detail)
 	}
 	if len(repeats) > 0 {
 		worst := repeats[0]
-		return checks.Attention(keyEventsRepeated, worst.Source, worst.Count, days).With(detail), nil
+		return checks.Attention(keyEventsRepeated, worst.Source, worst.Count, days).With(detail)
 	}
 
 	// Errors happened, but nothing is failing repeatedly. That is a normal
 	// machine, and saying so plainly is the honest answer.
-	return checks.OK(checks.PluralKey(keyEventsQuiet, len(events)), len(events), days).With(detail), nil
+	return checks.OK(checks.PluralKey(keyEventsQuiet, len(events)), len(events), days).With(detail)
 }
 
 // findRepetitions groups events by source and ID and returns the groups that

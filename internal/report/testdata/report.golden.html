@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computer health report</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --border: #d7dbe0;
+    --text: #16191d;
+    --muted: #5a626b;
+    --ok: #1c6b3c;
+    --ok-bg: #e4f3ea;
+    --attention: #8a5a00;
+    --attention-bg: #fbf0d9;
+    --urgent: #9b1c1c;
+    --urgent-bg: #fbe4e4;
+    --unknown: #3f4854;
+    --unknown-bg: #e9ecef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a;
+      --surface: #1c2024;
+      --border: #333a42;
+      --text: #e8eaed;
+      --muted: #a3acb6;
+      --ok: #6ede9d;
+      --ok-bg: #16301f;
+      --attention: #f0c674;
+      --attention-bg: #33290f;
+      --urgent: #f79191;
+      --urgent-bg: #3a1a1a;
+      --unknown: #c3cad2;
+      --unknown-bg: #262c33;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2rem 1rem 4rem;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 52rem; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; }
+  p { margin: .4rem 0; }
+  .muted { color: var(--muted); font-size: .9rem; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .6rem;
+    padding: 1rem 1.1rem;
+    margin: .75rem 0;
+  }
+  .chip {
+    display: inline-block;
+    padding: .12rem .55rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .01em;
+    white-space: nowrap;
+  }
+  .chip.ok { color: var(--ok); background: var(--ok-bg); }
+  .chip.attention { color: var(--attention); background: var(--attention-bg); }
+  .chip.urgent { color: var(--urgent); background: var(--urgent-bg); }
+  .chip.unknown { color: var(--unknown); background: var(--unknown-bg); }
+  .counts { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+  .counts li { display: flex; align-items: baseline; gap: .35rem; }
+  .counts .value { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .result-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+  .check-id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; color: var(--muted); }
+  .summary { margin: .5rem 0 0; }
+  table { border-collapse: collapse; width: 100%; margin-top: .75rem; font-size: .9rem; }
+  th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { width: 12rem; font-weight: 600; color: var(--muted); }
+  pre {
+    margin: .6rem 0 0;
+    padding: .7rem;
+    overflow-x: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: .4rem;
+    font-size: .82rem;
+  }
+  details { margin-top: .6rem; }
+  summary { cursor: pointer; font-size: .9rem; color: var(--muted); }
+  footer { margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  .notice { border-left: 3px solid var(--attention); padding-left: .75rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Computer health report</h1>
+  <p class="muted">What SupportOne read from this computer. It changed nothing.</p>
+
+  <dl class="muted">
+    <div><strong>Computer:</strong> Windows (amd64)</div>
+    <div><strong>Checked on:</strong> 2026-09-02 13:20 UTC</div>
+    <div><strong>Agent:</strong> 1.0.0</div>
+  </dl>
+
+  
+
+  <h2>Summary</h2>
+  <ul class="counts">
+    
+    <li><span class="value">1</span> <span class="chip urgent">Urgent</span></li>
+    
+    <li><span class="value">1</span> <span class="chip attention">Needs attention</span></li>
+    
+    <li><span class="value">1</span> <span class="chip unknown">Could not check</span></li>
+    
+    <li><span class="value">1</span> <span class="chip ok">OK</span></li>
+    
+  </ul>
+  
+
+  <h2>What was checked</h2>
+  
+  <section class="card">
+    <div class="result-head">
+      <span class="chip urgent">Urgent</span>
+      <span class="check-id">disk.smart</span>
+    </div>
+    <p class="summary">The drive Seagate ST2000 has 142 bad spots it has had to stop using. It still works, but this is how a disk begins to fail: back up your files and keep an eye on it.</p>
+    
+    
+    <details>
+      <summary>Show the evidence</summary>
+      
+      <pre>{
+  &#34;disks&#34;: [
+    {
+      &#34;name&#34;: &#34;Seagate ST2000&#34;,
+      &#34;reallocated_sectors&#34;: 142,
+      &#34;status&#34;: &#34;failing&#34;
+    }
+  ]
+}</pre>
+    </details>
+    
+  </section>
+  
+  <section class="card">
+    <div class="result-head">
+      <span class="chip attention">Needs attention</span>
+      <span class="check-id">updates.os</span>
+    </div>
+    <p class="summary">Updates were last installed 97 days ago, so security fixes released since then are missing.</p>
+    
+    
+    <details>
+      <summary>Show the evidence</summary>
+      
+      <table>
+        <tbody>
+        <tr><th scope="row">days_since_update</th><td>97</td></tr><tr><th scope="row">source</th><td>Windows Update install history</td></tr>
+        </tbody>
+      </table>
+      
+      
+    </details>
+    
+  </section>
+  
+  <section class="card">
+    <div class="result-head">
+      <span class="chip unknown">Could not check</span>
+      <span class="check-id">eventlog.errors</span>
+    </div>
+    <p class="summary">This check could not finish, so there is no answer to report.</p>
+    <p class="muted">the System log could not be read</p>
+    
+  </section>
+  
+  <section class="card">
+    <div class="result-head">
+      <span class="chip ok">OK</span>
+      <span class="check-id">os.info</span>
+    </div>
+    <p class="summary">Running Microsoft Windows 11 Pro 10.0.22631. It has been on for 2d 4h.</p>
+    
+    
+    <details>
+      <summary>Show the evidence</summary>
+      
+      <table>
+        <tbody>
+        <tr><th scope="row">build</th><td>22631</td></tr><tr><th scope="row">kernel</th><td>10.0.22631</td></tr>
+        </tbody>
+      </table>
+      
+      
+    </details>
+    
+  </section>
+  
+
+  
+  <h2>Not checked</h2>
+  <p class="muted">These checks need administrator rights and were not run. A check that did not run is not a check that passed.</p>
+  <ul><li class="check-id">security.posture</li></ul>
+  
+
+  <footer>
+    <h2>About this report</h2>
+    <p class="muted">Every line above was read from this computer; nothing was changed and nothing was sent anywhere. Checks that could not get an answer say so rather than reporting that all is well.</p>
+    <p class="muted">Audit log: /home/example/.config/SupportOne/audit.log</p>
+  </footer>
+</main>
+</body>
+</html>

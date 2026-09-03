@@ -21,6 +21,13 @@ func TestVersionFlag(t *testing.T) {
 	}
 }
 
+func TestConflictingOutputFlagsAreRejected(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if err := run([]string{"--json", "--text"}, &stdout, &stderr); err == nil {
+		t.Fatal("run succeeded, want an error when two outputs are requested")
+	}
+}
+
 func TestUnknownArgumentIsRejected(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	if err := run([]string{"snapshot"}, &stdout, &stderr); err == nil {
@@ -50,7 +57,7 @@ func TestJSONSnapshotIsWellFormed(t *testing.T) {
 func TestSnapshotWritesAuditTrail(t *testing.T) {
 	auditPath := filepath.Join(t.TempDir(), "audit.log")
 	var stdout, stderr bytes.Buffer
-	if err := run([]string{"--audit-log", auditPath, "--lang", "en"}, &stdout, &stderr); err != nil {
+	if err := run([]string{"--text", "--audit-log", auditPath, "--lang", "en"}, &stdout, &stderr); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 
@@ -64,7 +71,7 @@ func TestSnapshotWritesAuditTrail(t *testing.T) {
 
 func TestDryRunSaysNothingWillChange(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	args := []string{"--dry-run", "--lang", "en", "--audit-log", filepath.Join(t.TempDir(), "audit.log")}
+	args := []string{"--text", "--dry-run", "--lang", "en", "--audit-log", filepath.Join(t.TempDir(), "audit.log")}
 	if err := run(args, &stdout, &stderr); err != nil {
 		t.Fatalf("run: %v", err)
 	}

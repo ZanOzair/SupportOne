@@ -39,8 +39,14 @@ func (c problemCheck) Run(ctx context.Context) (checks.Result, error) {
 	if err != nil {
 		return checks.UnknownFor(err), nil
 	}
+	return problemVerdict(devices), nil
+}
+
+// problemVerdict names the devices Windows says are not working. It is
+// separate from collection so it can be tested on any machine.
+func problemVerdict(devices []device) checks.Result {
 	if len(devices) == 0 {
-		return checks.OK(keyDriversOK), nil
+		return checks.OK(keyDriversOK)
 	}
 
 	names := make([]string, 0, len(devices))
@@ -48,7 +54,7 @@ func (c problemCheck) Run(ctx context.Context) (checks.Result, error) {
 		names = append(names, d.Name)
 	}
 	return checks.Attention(checks.PluralKey(keyDriversProblem, len(devices)), len(devices), strings.Join(names, ", ")).
-		With(map[string]any{"devices": devices}), nil
+		With(map[string]any{"devices": devices})
 }
 
 func init() {

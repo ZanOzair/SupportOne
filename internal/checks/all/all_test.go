@@ -81,7 +81,7 @@ func TestEveryMessageKeyIsTranslated(t *testing.T) {
 		t.Fatalf("load catalog: %v", err)
 	}
 
-	for _, key := range messageKeys {
+	for _, key := range append(append([]string{}, messageKeys...), interfaceKeys...) {
 		if got := bundle.T(key); got == key {
 			t.Errorf("message key %q has no translation", key)
 		}
@@ -121,6 +121,22 @@ var messageKeys = []string{
 
 	"check.eventlog.errors.none", "check.eventlog.errors.quiet", "check.eventlog.errors.quiet.one",
 	"check.eventlog.errors.repeated", "check.eventlog.errors.critical", "check.eventlog.errors.critical.one",
+}
+
+// interfaceKeys are the labels the local interface and the saved report use.
+// They live in the same catalogs, so the same guard covers them.
+var interfaceKeys = []string{
+	"ui.heading", "ui.subheading", "ui.machine", "ui.checked_at", "ui.recheck", "ui.rechecking",
+	"ui.running", "ui.error", "ui.language", "ui.evidence", "ui.nothing_wrong",
+	"ui.skipped", "ui.skipped_note", "ui.save", "ui.save_html", "ui.save_json",
+	"ui.redaction", "ui.redaction_note", "ui.redact_hostnames", "ui.redact_usernames",
+	"ui.redact_serials", "ui.redact_addresses", "ui.preview", "ui.preview_note",
+	"ui.hide_preview", "ui.audit", "ui.close", "ui.closed", "ui.offline_note",
+
+	"report.title", "report.subtitle", "report.machine", "report.generated", "report.agent",
+	"report.unsigned", "report.summary", "report.no_findings", "report.checked",
+	"report.evidence", "report.skipped", "report.skipped_note", "report.audit",
+	"report.about", "report.about_body", "report.redacted",
 }
 
 func ids(cs []checks.Check) []string {

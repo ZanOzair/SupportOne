@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,7 +92,7 @@ func collectBattery(_ context.Context, _ platform.Runner) (batteryFacts, error) 
 		}
 
 		facts := batteryFacts{Present: true}
-		if cycles, err := parseSysfsUint([]byte(readTrimmed(filepath.Join(dir, "cycle_count")))); err == nil {
+		if cycles, err := parseSysfsUint([]byte(readTrimmed(filepath.Join(dir, "cycle_count")))); err == nil && cycles <= math.MaxInt32 {
 			facts.CycleCount = int(cycles)
 		}
 

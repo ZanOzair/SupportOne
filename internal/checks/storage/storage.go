@@ -83,8 +83,14 @@ func (c volumesCheck) Run(ctx context.Context) (checks.Result, error) {
 	if err != nil {
 		return checks.UnknownFor(err), nil
 	}
+	return volumesVerdict(volumes), nil
+}
+
+// volumesVerdict judges the volume with the least room left. It is separate
+// from collection so the thresholds can be tested without a filesystem.
+func volumesVerdict(volumes []volume) checks.Result {
 	if len(volumes) == 0 {
-		return checks.Unknown(keyVolumesNone), nil
+		return checks.Unknown(keyVolumesNone)
 	}
 
 	sort.Slice(volumes, func(i, j int) bool { return volumes[i].FreePercent() < volumes[j].FreePercent() })
@@ -96,11 +102,11 @@ func (c volumesCheck) Run(ctx context.Context) (checks.Result, error) {
 
 	switch {
 	case tightest.FreePercent() < criticalSpacePercent:
-		return checks.Urgent(keyVolumesCritical, tightest.Mount, free, percent).With(detail), nil
+		return checks.Urgent(keyVolumesCritical, tightest.Mount, free, percent).With(detail)
 	case tightest.FreePercent() < lowSpacePercent:
-		return checks.Attention(keyVolumesLow, tightest.Mount, free, percent).With(detail), nil
+		return checks.Attention(keyVolumesLow, tightest.Mount, free, percent).With(detail)
 	default:
-		return checks.OK(checks.PluralKey(keyVolumesOK, len(volumes)), len(volumes), tightest.Mount, free).With(detail), nil
+		return checks.OK(checks.PluralKey(keyVolumesOK, len(volumes)), len(volumes), tightest.Mount, free).With(detail)
 	}
 }
 
@@ -120,8 +126,13 @@ func (c smartCheck) Run(ctx context.Context) (checks.Result, error) {
 	if err != nil {
 		return checks.UnknownFor(err), nil
 	}
+	return disksVerdict(disks), nil
+}
+
+// disksVerdict turns the drives' own health reports into one answer.
+func disksVerdict(disks []disk) checks.Result {
 	if len(disks) == 0 {
-		return checks.Unknown(keySMARTNoDisks), nil
+		return checks.Unknown(keySMARTNoDisks)
 	}
 
 	detail := map[string]any{"disks": disks}
@@ -150,15 +161,15 @@ func (c smartCheck) Run(ctx context.Context) (checks.Result, error) {
 
 	switch {
 	case failing > 0:
-		return checks.Urgent(keySMARTFailing, worstName).With(detail), nil
+		return checks.Urgent(keySMARTFailing, worstName).With(detail)
 	case worstReallocated > 0:
 		// Retired sectors are not yet a failure verdict, but they are the
 		// first thing a failing drive does. Say so plainly.
-		return checks.Attention(keySMARTBadSpots, worstName, worstReallocated).With(detail), nil
+		return checks.Attention(keySMARTBadSpots, worstName, worstReallocated).With(detail)
 	case unknown == len(disks):
-		return checks.Unknown(keySMARTUnknown).With(detail), nil
+		return checks.Unknown(keySMARTUnknown).With(detail)
 	default:
-		return checks.OK(checks.PluralKey(keySMARTOK, len(disks)), len(disks)).With(detail), nil
+		return checks.OK(checks.PluralKey(keySMARTOK, len(disks)), len(disks)).With(detail)
 	}
 }
 

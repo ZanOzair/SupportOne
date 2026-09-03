@@ -44,13 +44,14 @@ func collectVolumes(_ context.Context, _ platform.Runner) ([]volume, error) {
 			continue
 		}
 
+		blockSize := nonNegative(st.Bsize)
 		seen[entry.Device] = true
 		out = append(out, volume{
 			Mount:      entry.Mount,
 			Device:     entry.Device,
 			Filesystem: entry.FSType,
-			TotalBytes: st.Blocks * uint64(st.Bsize),
-			FreeBytes:  st.Bavail * uint64(st.Bsize),
+			TotalBytes: st.Blocks * blockSize,
+			FreeBytes:  st.Bavail * blockSize,
 		})
 	}
 	return out, nil
@@ -91,4 +92,14 @@ func collectDisks(ctx context.Context, run platform.Runner) ([]disk, error) {
 		out = append(out, d)
 	}
 	return out, nil
+}
+
+// nonNegative converts a signed block size from the kernel. A negative value
+// cannot happen, and turning one into a huge unsigned number would report a
+// fictional drive size, so it becomes zero and the volume reads as unmeasured.
+func nonNegative(v int64) uint64 {
+	if v < 0 {
+		return 0
+	}
+	return uint64(v)
 }

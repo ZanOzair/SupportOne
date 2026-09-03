@@ -15,6 +15,7 @@ env:
   GOVULNCHECK_VERSION: v1.7.0
   CYCLONEDX_GOMOD_VERSION: v1.12.0
   TOOLCHAIN_GO_VERSION: "1.26.x"
+  NODE_VERSION: "22.x"
   MIN_COVERAGE: "80.0"
 
 jobs:
@@ -137,6 +138,47 @@ jobs:
         run: |
           go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
           govulncheck ./...
+
+  interface:
+    name: Interface
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web/agent-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/agent-ui/package-lock.json
+
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Build
+        run: npm run build
+
+      # The built interface is committed so `go build` works without Node. If a
+      # rebuild changes it, the commit is stale.
+      - name: Committed build is current
+        working-directory: .
+        run: |
+          if ! git diff --quiet -- web/agent-ui/dist; then
+            echo "web/agent-ui/dist differs from a fresh build."
+            echo "Run 'npm run build' in web/agent-ui and commit the result."
+            git diff --stat -- web/agent-ui/dist
+            exit 1
+          fi
 
   sbom:
     name: SBOM

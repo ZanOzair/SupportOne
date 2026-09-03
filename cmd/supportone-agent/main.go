@@ -1,8 +1,9 @@
 // Command supportone-agent runs SupportOne's read-only diagnostics on the
 // machine it is started on.
 //
-// It makes no outbound network connection. Nothing leaves this computer unless
-// the user explicitly sends it.
+// Started with no flags it opens its interface in the user's browser, served
+// from loopback. It makes no outbound network connection: nothing leaves this
+// computer unless the user saves or sends it themselves.
 package main
 
 import (
@@ -19,7 +20,10 @@ import (
 	_ "github.com/ZanOzair/supportone/internal/checks/all"
 	"github.com/ZanOzair/supportone/internal/consent"
 	"github.com/ZanOzair/supportone/internal/i18n"
+	"github.com/ZanOzair/supportone/internal/localui"
 	"github.com/ZanOzair/supportone/internal/platform"
+	"github.com/ZanOzair/supportone/internal/redact"
+	agentui "github.com/ZanOzair/supportone/web/agent-ui"
 )
 
 // Build metadata, set via -ldflags at release time. An unset version means an
@@ -31,13 +35,16 @@ var (
 )
 
 type options struct {
-	json       bool
-	dryRun     bool
-	lang       string
-	listChecks bool
-	auditPath  string
-	timeout    time.Duration
-	showVer    bool
+	json        bool
+	text        bool
+	dryRun      bool
+	lang        string
+	listChecks  bool
+	auditPath   string
+	timeout     time.Duration
+	idleTimeout time.Duration
+	noBrowser   bool
+	showVer     bool
 }
 
 func main() {
@@ -87,19 +94,51 @@ func run(args []string, stdout, stderr io.Writer) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	return snapshot(ctx, stdout, bundle, audit, host, opts)
+	if err := audit.Append(consent.Event{
+		Type: consent.EventAgentStart,
+		Fields: map[string]string{
+			"version": version,
+			"os":      string(host.OS),
+			"arch":    host.Arch,
+			"dry_run": fmt.Sprint(opts.dryRun),
+		},
+	}); err != nil {
+		return err
+	}
+	defer func() {
+		_ = audit.Append(consent.Event{Type: consent.EventAgentStop})
+	}()
+
+	// The terminal modes exist for technicians and scripts. Anyone who just
+	// runs the file gets the interface.
+	switch {
+	case opts.json:
+		snap := takeSnapshot(ctx, audit, host, opts)
+		enc := json.NewEncoder(stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(snap)
+	case opts.text:
+		snap := takeSnapshot(ctx, audit, host, opts)
+		writeText(stdout, bundle, snap, host, opts, audit.Path())
+		return nil
+	default:
+		return serveUI(ctx, stdout, audit, host, opts)
+	}
 }
 
 func parseFlags(args []string, stderr io.Writer) (options, error) {
 	var opts options
 	fs := flag.NewFlagSet("supportone-agent", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	fs.BoolVar(&opts.json, "json", false, "write the snapshot as JSON instead of text")
+	fs.BoolVar(&opts.json, "json", false, "write the snapshot to standard output as JSON and exit")
+	fs.BoolVar(&opts.text, "text", false, "write the snapshot to standard output as text and exit")
 	fs.BoolVar(&opts.dryRun, "dry-run", false, "report what would change without changing anything")
 	fs.StringVar(&opts.lang, "lang", "", "language tag, e.g. en or ms (default: system language)")
 	fs.BoolVar(&opts.listChecks, "list-checks", false, "list the checks available on this computer and exit")
 	fs.StringVar(&opts.auditPath, "audit-log", "", "path to the audit log (default: per-user config directory)")
 	fs.DurationVar(&opts.timeout, "timeout", checks.DefaultTimeout, "time limit for a single check")
+	fs.DurationVar(&opts.idleTimeout, "idle-timeout", localui.DefaultIdleTimeout, "close the interface after this long with nobody using it")
+	fs.BoolVar(&opts.noBrowser, "no-browser", false, "print the interface address instead of opening a browser")
 	fs.BoolVar(&opts.showVer, "version", false, "print build information and exit")
 
 	if err := fs.Parse(args); err != nil {
@@ -107,6 +146,9 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	}
 	if fs.NArg() > 0 {
 		return options{}, fmt.Errorf("unexpected argument %q", fs.Arg(0))
+	}
+	if opts.json && opts.text {
+		return options{}, fmt.Errorf("--json and --text ask for two different outputs; choose one")
 	}
 	return opts, nil
 }
@@ -129,55 +171,58 @@ func listChecks(w io.Writer, bundle *i18n.Bundle, host platform.Host) error {
 	return nil
 }
 
-func snapshot(ctx context.Context, w io.Writer, bundle *i18n.Bundle, audit *consent.Log, host platform.Host, opts options) error {
+// takeSnapshot runs the checks available on this machine and records each one
+// in the audit log.
+func takeSnapshot(ctx context.Context, audit *consent.Log, host platform.Host, opts options) checks.Snapshot {
 	elevated, err := platform.IsElevated()
 	if err != nil {
-		return err
-	}
-
-	if err := audit.Append(consent.Event{
-		Type: consent.EventAgentStart,
-		Fields: map[string]string{
-			"version":  version,
-			"os":       string(host.OS),
-			"arch":     host.Arch,
-			"elevated": fmt.Sprint(elevated),
-			"dry_run":  fmt.Sprint(opts.dryRun),
-		},
-	}); err != nil {
-		return err
+		elevated = false
 	}
 
 	snap := checks.RunAll(ctx, checks.Default, host, elevated, opts.timeout)
 	snap.AgentVersion = version
 
 	for _, res := range snap.Results {
-		if err := audit.Append(consent.Event{
+		_ = audit.Append(consent.Event{
 			Type:    consent.EventCheckRun,
 			Subject: res.CheckID,
 			Fields: map[string]string{
 				"severity": string(res.Severity),
 				"duration": res.Duration.String(),
 			},
-		}); err != nil {
-			return err
-		}
+		})
 	}
+	return snap
+}
 
-	if opts.json {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(snap); err != nil {
-			return err
-		}
-	} else {
-		writeText(w, bundle, snap, host, opts, audit.Path())
-	}
-
-	return audit.Append(consent.Event{
-		Type:   consent.EventAgentStop,
-		Fields: map[string]string{"checks_run": fmt.Sprint(len(snap.Results))},
+func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform.Host, opts options) error {
+	server, err := localui.New(localui.Config{
+		Assets: agentui.Assets,
+		Snapshot: func(ctx context.Context) checks.Snapshot {
+			return takeSnapshot(ctx, audit, host, opts)
+		},
+		Audit:       audit,
+		Version:     version,
+		Host:        host,
+		Identity:    redact.CurrentIdentity(),
+		Lang:        opts.lang,
+		IdleTimeout: opts.idleTimeout,
 	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(w, "SupportOne is running at %s\n", server.URL())
+	fmt.Fprintln(w, "This address is on this computer only. Press Ctrl+C to stop.")
+
+	if !opts.noBrowser {
+		if err := platform.OpenBrowser(ctx, server.URL()); err != nil {
+			// A machine with no desktop session still gets a usable agent:
+			// the address is already printed above.
+			fmt.Fprintf(w, "Could not open a browser (%v). Open the address above yourself.\n", err)
+		}
+	}
+	return server.Serve(ctx)
 }
 
 func writeText(w io.Writer, bundle *i18n.Bundle, snap checks.Snapshot, host platform.Host, opts options, auditPath string) {

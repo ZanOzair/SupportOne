@@ -56,7 +56,12 @@ func (c configCheck) Run(ctx context.Context) (checks.Result, error) {
 	// Routing detail is best-effort: losing it should not cost the interface
 	// list, which is the more useful half of the answer.
 	route, routeErr := collectRouting(ctx, c.run)
+	return configVerdict(interfaces, route, routeErr), nil
+}
 
+// configVerdict judges what the machine is connected to. It is separate from
+// collection so each state can be tested without rewiring a network.
+func configVerdict(interfaces []iface, route routing, routeErr error) checks.Result {
 	detail := map[string]any{"interfaces": interfaces}
 	if route.Gateway != "" {
 		detail["gateway"] = route.Gateway
@@ -70,7 +75,7 @@ func (c configCheck) Run(ctx context.Context) (checks.Result, error) {
 
 	active := activeInterfaces(interfaces)
 	if len(active) == 0 {
-		return checks.Urgent(keyNetworkNoAddress).With(detail), nil
+		return checks.Urgent(keyNetworkNoAddress).With(detail)
 	}
 
 	names := make([]string, 0, len(active))
@@ -81,11 +86,11 @@ func (c configCheck) Run(ctx context.Context) (checks.Result, error) {
 
 	switch {
 	case route.Gateway == "" && routeErr == nil:
-		return checks.Attention(keyNetworkNoGateway, joined).With(detail), nil
+		return checks.Attention(keyNetworkNoGateway, joined).With(detail)
 	case len(route.DNS) == 0 && routeErr == nil:
-		return checks.Attention(keyNetworkNoDNS, joined).With(detail), nil
+		return checks.Attention(keyNetworkNoDNS, joined).With(detail)
 	default:
-		return checks.OK(keyNetworkOK, joined, route.Gateway).With(detail), nil
+		return checks.OK(keyNetworkOK, joined, route.Gateway).With(detail)
 	}
 }
 

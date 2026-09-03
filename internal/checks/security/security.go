@@ -60,7 +60,12 @@ func (c postureCheck) Run(ctx context.Context) (checks.Result, error) {
 	if err != nil {
 		return checks.UnknownFor(err), nil
 	}
+	return postureVerdict(facts), nil
+}
 
+// postureVerdict weighs the three protections. It is separate from collection
+// so the rules can be tested without a machine in each state.
+func postureVerdict(facts postureFacts) checks.Result {
 	detail := map[string]any{
 		"disk_encryption": string(facts.DiskEncryption),
 		"firewall":        string(facts.Firewall),
@@ -85,24 +90,24 @@ func (c postureCheck) Run(ctx context.Context) (checks.Result, error) {
 	}
 
 	if len(off) > 1 {
-		return checks.Attention(keyPostureSeveralOff, len(off)).With(detail), nil
+		return checks.Attention(keyPostureSeveralOff, len(off)).With(detail)
 	}
 	switch {
 	case facts.DiskEncryption == stateOff:
-		return checks.Attention(keyPostureNoEncryption).With(detail), nil
+		return checks.Attention(keyPostureNoEncryption).With(detail)
 	case facts.Firewall == stateOff:
-		return checks.Attention(keyPostureNoFirewall).With(detail), nil
+		return checks.Attention(keyPostureNoFirewall).With(detail)
 	case facts.Antivirus == stateOff:
-		return checks.Attention(keyPostureNoAntivirus).With(detail), nil
+		return checks.Attention(keyPostureNoAntivirus).With(detail)
 	}
 
 	// Nothing is switched off, but that is only reassuring if something was
 	// actually readable.
 	if facts.DiskEncryption == stateUnknown && facts.Firewall == stateUnknown &&
 		(facts.Antivirus == stateUnknown || facts.Antivirus == stateNotApplicable) {
-		return checks.Unknown(keyPostureNothingReadable).With(detail), nil
+		return checks.Unknown(keyPostureNothingReadable).With(detail)
 	}
-	return checks.OK(keyPostureOK).With(detail), nil
+	return checks.OK(keyPostureOK).With(detail)
 }
 
 func init() {

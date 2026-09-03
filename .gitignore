@@ -9,9 +9,10 @@
 *.test
 *.out
 
-# Node (agent UI and dashboard, from Phase 1)
+# Node (agent UI and dashboard)
 node_modules/
 .vite/
+*.tsbuildinfo
 
 # Local environment
 .env

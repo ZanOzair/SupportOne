@@ -34,6 +34,9 @@ linters:
           disabled: false
 
   exclusions:
+    paths:
+      # The frontend's dependencies occasionally ship Go sources of their own.
+      - node_modules
     rules:
       # Test helpers may ignore errors that production code must not.
       - path: _test\.go

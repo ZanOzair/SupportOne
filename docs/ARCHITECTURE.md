@@ -28,10 +28,18 @@ cmd/
   supportone-server/    optional fleet server (Phase 4)
 internal/
   checks/               diagnostic plugin contract + registry
+    all/                the one file that decides which checks are compiled in
+    cim/                shared decoder for Windows CIM/WMI JSON
+    system/ storage/ network/ events/
+    updates/ startup/ security/ drivers/
   fixes/                remediation plugin contract + registry
   consent/              audit log, consent flow, restore points
+  localui/              the loopback server that hosts the interface
+  redact/               removing identifying detail before anything is saved
+  report/               HTML and JSON rendering
   platform/             OS abstraction layer
   i18n/                 embedded message catalogs
+web/agent-ui/           the interface: TypeScript, React, Tailwind, Vite
 docs/
 .github/workflows/      build, test, lint, vulnerability scan, SBOM
 ```
@@ -53,7 +61,9 @@ type Check interface {
 }
 ```
 
-A check is registered from its own file, in a platform subpackage, at `init()` time. A build for one OS carries only the checks that OS can honestly answer.
+A check registers itself at `init()` time, and `internal/checks/all` is the single file that decides which packages are compiled in. The registry filters by platform at run time, so a snapshot on macOS is never offered a check that only Windows can answer.
+
+Within a check package the split matters: **collectors** carry build constraints and are thin, doing little more than reading a file or running one compiled-in command; **parsers** carry no build constraints at all. That is what lets Windows CIM output and macOS `system_profiler` output be tested from recorded fixtures on a Linux CI runner.
 
 Three rules hold for every check:
 
@@ -79,6 +89,18 @@ type Fix interface {
 The registry refuses to accept a fix that cannot describe what it changes, because the user's confirmation is given against that description.
 
 `Registry.Resolve` is the single gate every suggestion passes through, including suggestions from the optional AI assistant: candidate IDs are matched against the registry and the current platform, and anything unrecognised is discarded before the user ever sees it. There is no path from a string to an action except a compiled-in fix whose ID matches exactly.
+
+## The local interface
+
+The agent serves its own interface rather than shipping a GUI toolkit, so the same screens render on every OS and the binary stays a few megabytes.
+
+`internal/localui` binds `127.0.0.1:0` — the operating system picks a free port, which is what makes the address unguessable — mints a 32-byte token from the OS random source, and opens the browser at a URL carrying it. The page keeps the token in memory and removes it from the address bar, so it does not reach browser history or a screenshot.
+
+Every `/api/` request must present that token, compared in constant time. Every response carries a Content-Security-Policy with no inline script and no remote origin, and every request is checked against the listening address: a page that rebinds a DNS name to `127.0.0.1` still cannot forge the `Origin` and `Host` headers the browser sends. The server shuts down when idle.
+
+Static files are served without a token, because they carry no data: the snapshot only ever arrives through the API.
+
+`internal/redact` sits between the snapshot and anything leaving the process. It walks the JSON shape of a result's evidence, so a new check needs no changes there, and the interface can show the user exactly what a policy would leave before they save it.
 
 ## Message keys, not prose
 

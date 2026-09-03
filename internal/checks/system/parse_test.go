@@ -303,3 +303,23 @@ func TestParsePercent(t *testing.T) {
 		}
 	}
 }
+
+func TestParseWindowsHardware(t *testing.T) {
+	fixture := []byte(`{"Manufacturer":"LENOVO","Model":"20XW00AAUK","Cores":8,` +
+		`"Cpu":"11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz","Memory":"34093780992"}`)
+
+	facts, err := parseWindowsHardware(fixture)
+	if err != nil {
+		t.Fatalf("parseWindowsHardware: %v", err)
+	}
+	if facts.Vendor != "LENOVO" || facts.Model != "20XW00AAUK" || facts.Cores != 8 {
+		t.Errorf("facts = %+v", facts)
+	}
+	if facts.CPU != "11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz" {
+		t.Errorf("cpu = %q", facts.CPU)
+	}
+
+	if _, err := parseWindowsHardware([]byte(`null`)); err == nil {
+		t.Error("expected an error when Win32_ComputerSystem returns nothing")
+	}
+}

@@ -2,7 +2,7 @@
 
 This document is written to be falsifiable. It says what SupportOne protects, who it protects against, where it can be attacked, and — importantly — what it does not defend against. No claim here is "total", "complete", or "100%".
 
-Scope as of Phase 0: the agent binary, its registries, the audit log, and the build pipeline. Sections marked *(Phase N)* describe surfaces that do not exist yet; they are listed so the design is fixed before the code is written, and they will be revised when built.
+Scope as of Phase 1: the agent binary, its twelve read-only checks, the local interface, the redaction and report path, the audit log, and the build pipeline. Sections marked *(Phase N)* describe surfaces that do not exist yet; they are listed so the design is fixed before the code is written, and they will be revised when built.
 
 ## Assets
 
@@ -25,15 +25,17 @@ Scope as of Phase 0: the agent binary, its registries, the audit log, and the bu
 
 ## Attack surface and controls
 
-### Local web UI *(Phase 1)*
+### Local web UI
 
-The agent serves its UI on loopback and opens the user's browser. Planned controls:
+The agent serves its UI on loopback and opens the user's browser. Implemented controls, each covered by a test in `internal/localui`:
 
-- Bind `127.0.0.1` only, on a random high port.
-- A random per-session bearer token, required on every request.
-- `Origin` and `Host` header validation on every request, which is what actually blocks DNS rebinding — a rebound attacker resolves a hostname to `127.0.0.1` but cannot forge these.
-- A strict Content-Security-Policy with no inline script and no remote origins.
-- Automatic shutdown when idle.
+- Binds `127.0.0.1` only, on a port the OS assigns from the ephemeral range.
+- A 32-byte token from the OS random source, minted per run, required on every `/api/` request and compared in constant time.
+- `Origin` and `Host` validated against the listening address on every request, which is what actually blocks DNS rebinding — a rebound attacker resolves a hostname to `127.0.0.1` but cannot forge these headers.
+- `Content-Security-Policy: default-src 'none'` with `script-src 'self'`, no inline script, no remote origin, and `frame-ancestors 'none'`.
+- Shuts down after 15 minutes unused, or when the user closes the session from the page.
+
+Static files are served without a token. They carry no data — the snapshot reaches the page only through the token-protected API — and requiring one would mean putting the token in every asset request.
 
 Residual risk: any process on the machine running as the user can read the token from the process's own environment and connect. This is not a boundary the agent can enforce; a local attacker with the user's rights has already won.
 
@@ -58,9 +60,9 @@ The model is untrusted input, not a control path.
 
 ### Data leaving the machine
 
-- The agent makes no outbound connection unless the user acts.
-- Before sending, the exact payload is shown, serials, hostnames and usernames can be redacted, and the send is confirmed.
-- Every send is recorded in the audit log with its destination and byte count.
+- The agent makes no outbound connection unless the user acts. This shapes the checks themselves: `updates.os` reads local records rather than asking Windows Update, Apple or a package mirror what is available, because that query would be an outbound connection the user did not request.
+- `internal/redact` strips hostnames, usernames and home paths, serial numbers, and IP and MAC addresses, by field name and by value shape. The interface previews the exact payload before anything is written, and the report marks itself as redacted so a reader knows the blanks are deliberate.
+- Every saved or sent file is recorded in the audit log with its destination and whether it was redacted.
 - There is no telemetry, no analytics, no crash reporting, no "anonymous usage statistics". Not off-by-default: absent.
 
 ### Audit log
