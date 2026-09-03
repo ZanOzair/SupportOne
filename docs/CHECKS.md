@@ -17,7 +17,7 @@ Three rules hold throughout:
 | Urgent | Risks data or downtime now. |
 | Could not check | No answer was available. Never a stand-in for OK. |
 
-## The twelve
+## The fourteen
 
 ### `os.info` — Windows, macOS, Linux
 
@@ -165,7 +165,47 @@ Full-charge capacity as a percentage of design capacity, and cycle count where t
 
 A desktop with no battery is a fact, not a fault: it reports OK.
 
-## Adding a thirteenth
+### `performance.load` — Windows, macOS, Linux
+
+How busy the processor is, and how close the machine is to running out of memory.
+
+Reads `/proc/loadavg` and `/proc/meminfo` on Linux, `vm.loadavg`/`hw.memsize`/`vm_stat`/`vm.swapusage` on macOS, and `Win32_OperatingSystem`, `Win32_Processor` and `Win32_PageFileUsage` on Windows.
+
+| Verdict | When |
+|---|---|
+| Urgent | Under 10% of installed memory available |
+| Needs attention | Under 20% of installed memory available |
+| Needs attention | More than 50% of the page file or swap area in use |
+| Needs attention | One-minute run queue at or above 2.0 per core |
+| Needs attention | An instantaneous processor reading at or above 90% |
+| Could not check | Neither a load figure nor a memory total was readable |
+| OK | None of the above |
+
+**A busy processor is never urgent, however busy it is.** A snapshot is a moment, and a machine compiling something or playing a video is supposed to be busy. One reading cannot tell a fault from ordinary work, so the message says it is one reading. Memory is different: a machine with almost nothing free is struggling *now*, which a single reading can establish.
+
+Unix keeps a one-minute run-queue average; Windows offers only an instantaneous percentage. These do not mean the same thing and are never blended into one number — the evidence carries whichever the platform actually reported, and never the other.
+
+### `backup.status` — Windows, macOS, Linux
+
+Whether a backup exists that this check knows how to read, and when it last ran.
+
+Reads `tmutil destinationinfo` and `tmutil latestbackup` on macOS, and `Win32_ShadowCopy` on Windows. Linux reports that it did not look.
+
+| Verdict | When |
+|---|---|
+| Urgent | Last backup more than 30 days ago |
+| Needs attention | Last backup more than 7 days ago |
+| Needs attention | A mechanism is configured but no completed backup was found |
+| Needs attention | No backup found that this check can see |
+| Could not check | The recorded date is in the future — a clock is wrong |
+| Could not check | Linux: no single mechanism to read |
+| OK | Last backup within 7 days |
+
+**A negative result is worded as "no backup SupportOne can see", never "you have no backup".** This check looks for the mechanism the operating system itself ships and nothing else. Someone using Backblaze, Veeam, rsync to a NAS, or a phone photo sync has a backup it cannot see, and telling them they are unprotected when they are not is its own kind of harm.
+
+Linux is the sharpest case. Timeshift, Déjà Dup, Borg, restic, rsnapshot and a hand-written rsync cron job are all common, and each records its state somewhere different. Rather than guess at one, the check reports plainly that it did not look — which is *unknown*, not a warning, because it is not a finding about the user's backups at all.
+
+## Adding a check
 
 Write a package under `internal/checks/`, implement the `Check` interface, register it from `init()`, and add one import line to `internal/checks/all`. Keep the collector thin and the parsing separate — parser files carry no build constraints, which is how Windows and macOS output is tested from recorded fixtures on any machine.
 

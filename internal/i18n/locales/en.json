@@ -235,5 +235,19 @@
   "ui.wizards.status.no_help": "Did not help",
   "ui.wizards.status.declined": "Skipped",
   "ui.wizards.status.blocked": "Could not",
-  "ui.wizards.status.unknown": "Could not check"
+  "ui.wizards.status.unknown": "Could not check",
+  "check.performance.load.ok": "%s of %s memory free, and nothing is queueing for the processor.",
+  "check.performance.load.busy": "The processor has been busy: %.2f jobs waiting across %d cores over the last minute.",
+  "check.performance.load.busy_now": "The processor was %d%% busy at the moment this was read. That is one reading, not a pattern — it may just have been doing something.",
+  "check.performance.load.memory_low": "Only %s of %s memory is free. There is little headroom for anything else you open.",
+  "check.performance.load.memory_critical": "Almost no memory is free: %s of %s. The computer is working around this constantly, which is what makes it feel slow.",
+  "check.performance.load.swapping": "The computer has moved %s out of memory onto the disk to keep going. That is much slower than memory.",
+  "check.performance.load.unreadable": "SupportOne could not read how busy this computer is.",
+  "check.backup.status.ok": "%s last backed up %s ago.",
+  "check.backup.status.stale": "%s last backed up %s ago. Anything changed since then is not in a backup.",
+  "check.backup.status.very_stale": "%s last backed up %s ago. More than a month of work is not backed up anywhere SupportOne can see.",
+  "check.backup.status.never_run": "%s is set up but SupportOne cannot find a completed backup from it.",
+  "check.backup.status.none": "SupportOne found no %s backup on this computer. It does not see other backup tools, so this does not prove there is no backup — but if you are not sure, that is worth checking.",
+  "check.backup.status.unreadable": "SupportOne read a %s backup date it does not believe, so it will not report one. The computer's clock may be wrong.",
+  "check.backup.status.not_applicable": "This computer's system has no single backup tool SupportOne knows how to read, so it did not look. That is not a finding about whether you have a backup."
 }

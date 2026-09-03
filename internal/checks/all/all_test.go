@@ -8,10 +8,11 @@ import (
 	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
-// wantIDs is the full set of Phase 1 checks. The list is written out so that
+// wantIDs is the full set of compiled-in checks. The list is written out so that
 // removing or renaming a check is a deliberate edit here, not a silent loss
 // from a report someone is relying on.
 var wantIDs = []string{
+	"backup.status",
 	"battery.health",
 	"disk.smart",
 	"disk.volumes",
@@ -21,6 +22,7 @@ var wantIDs = []string{
 	"hardware.ram",
 	"network.config",
 	"os.info",
+	"performance.load",
 	"security.posture",
 	"startup.items",
 	"updates.os",
@@ -88,7 +90,7 @@ func TestEveryMessageKeyIsTranslated(t *testing.T) {
 	}
 }
 
-// messageKeys lists every key a Phase 1 check can put in a result. The checks
+// messageKeys lists every key a check can put in a result. The checks
 // keep their keys unexported, so this list is the seam that keeps the catalogs
 // honest.
 var messageKeys = []string{
@@ -122,6 +124,14 @@ var messageKeys = []string{
 
 	"check.eventlog.errors.none", "check.eventlog.errors.quiet", "check.eventlog.errors.quiet.one",
 	"check.eventlog.errors.repeated", "check.eventlog.errors.critical", "check.eventlog.errors.critical.one",
+
+	"check.performance.load.ok", "check.performance.load.busy", "check.performance.load.busy_now",
+	"check.performance.load.memory_low", "check.performance.load.memory_critical",
+	"check.performance.load.swapping", "check.performance.load.unreadable",
+
+	"check.backup.status.ok", "check.backup.status.stale", "check.backup.status.very_stale",
+	"check.backup.status.never_run", "check.backup.status.none", "check.backup.status.unreadable",
+	"check.backup.status.not_applicable",
 }
 
 // interfaceKeys are the labels the local interface and the saved report use.

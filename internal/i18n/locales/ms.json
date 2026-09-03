@@ -235,5 +235,19 @@
   "ui.wizards.status.no_help": "Tidak membantu",
   "ui.wizards.status.declined": "Dilangkau",
   "ui.wizards.status.blocked": "Tidak dapat",
-  "ui.wizards.status.unknown": "Tidak dapat diperiksa"
+  "ui.wizards.status.unknown": "Tidak dapat diperiksa",
+  "check.performance.load.ok": "%s daripada %s memori masih kosong, dan tiada apa-apa beratur untuk pemproses.",
+  "check.performance.load.busy": "Pemproses sibuk: %.2f kerja menunggu merentasi %d teras dalam seminit lalu.",
+  "check.performance.load.busy_now": "Pemproses %d%% sibuk pada saat ini dibaca. Itu satu bacaan, bukan corak — mungkin ia sekadar sedang membuat sesuatu.",
+  "check.performance.load.memory_low": "Hanya %s daripada %s memori kosong. Tiada banyak ruang untuk apa-apa lagi yang anda buka.",
+  "check.performance.load.memory_critical": "Hampir tiada memori kosong: %s daripada %s. Komputer sentiasa berusaha mengatasinya, dan itulah yang membuatnya terasa perlahan.",
+  "check.performance.load.swapping": "Komputer telah memindahkan %s daripada memori ke cakera untuk terus berjalan. Itu jauh lebih perlahan daripada memori.",
+  "check.performance.load.unreadable": "SupportOne tidak dapat membaca sejauh mana komputer ini sibuk.",
+  "check.backup.status.ok": "%s kali terakhir membuat sandaran %s lalu.",
+  "check.backup.status.stale": "%s kali terakhir membuat sandaran %s lalu. Apa-apa yang berubah sejak itu tiada dalam sandaran.",
+  "check.backup.status.very_stale": "%s kali terakhir membuat sandaran %s lalu. Lebih sebulan kerja tidak disandarkan di mana-mana yang SupportOne dapat lihat.",
+  "check.backup.status.never_run": "%s telah disediakan tetapi SupportOne tidak menemui sebarang sandaran yang selesai daripadanya.",
+  "check.backup.status.none": "SupportOne tidak menemui sandaran %s pada komputer ini. Ia tidak melihat alat sandaran lain, jadi ini tidak membuktikan tiada sandaran — tetapi jika anda tidak pasti, itu berbaloi diperiksa.",
+  "check.backup.status.unreadable": "SupportOne membaca tarikh sandaran %s yang tidak dipercayainya, jadi ia tidak akan melaporkan satu. Jam komputer mungkin salah.",
+  "check.backup.status.not_applicable": "Sistem komputer ini tiada satu alat sandaran yang SupportOne tahu cara membacanya, jadi ia tidak memeriksa. Itu bukan penemuan tentang sama ada anda mempunyai sandaran."
 }

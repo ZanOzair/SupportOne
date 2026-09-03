@@ -21,9 +21,9 @@ The offline explainer, the optional AI assistant, the fleet server and remote he
 
 ## What it checks
 
-Twelve checks, each read-only, each documented with its thresholds in [docs/CHECKS.md](docs/CHECKS.md):
+Fourteen checks, each read-only, each documented with its thresholds in [docs/CHECKS.md](docs/CHECKS.md):
 
-`os.info` · `hardware.inventory` · `hardware.ram` · `disk.volumes` · `disk.smart` · `drivers.problem` (Windows) · `eventlog.errors` · `network.config` · `updates.os` · `startup.items` · `security.posture` · `battery.health`
+`os.info` · `hardware.inventory` · `hardware.ram` · `disk.volumes` · `disk.smart` · `drivers.problem` (Windows) · `eventlog.errors` · `network.config` · `updates.os` · `startup.items` · `security.posture` · `battery.health` · `performance.load` · `backup.status`
 
 ## What it can repair
 
