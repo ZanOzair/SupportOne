@@ -3,6 +3,7 @@ package i18n
 import (
 	"encoding/json"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -95,4 +96,48 @@ func TestTranslateFallsBackThenSurfacesMissingKeys(t *testing.T) {
 	if got := b.T("agent.checks.available", 12, "Windows"); got == "" {
 		t.Error("formatted message is empty")
 	}
+}
+
+// TestPluralVariantsTakeTheSamePlaceholders guards the bug where a singular
+// message drops the count placeholder its plural sibling has: the check still
+// passes the count, and Go renders a formatting error into the user's report.
+func TestPluralVariantsTakeTheSamePlaceholders(t *testing.T) {
+	for _, lang := range Available() {
+		messages, err := read(lang)
+		if err != nil {
+			t.Fatalf("read %s: %v", lang, err)
+		}
+
+		for key, singular := range messages {
+			base, isVariant := strings.CutSuffix(key, ".one")
+			if !isVariant {
+				continue
+			}
+			plural, ok := messages[base]
+			if !ok {
+				t.Errorf("%s: %q has no plural form at %q", lang, key, base)
+				continue
+			}
+			if got, want := placeholders(singular), placeholders(plural); got != want {
+				t.Errorf("%s: %q takes %d placeholders, but %q takes %d", lang, key, got, base, want)
+			}
+		}
+	}
+}
+
+// placeholders counts the format verbs in a message, ignoring the escaped
+// percent sign that renders a literal %.
+func placeholders(msg string) int {
+	count := 0
+	for i := 0; i < len(msg); i++ {
+		if msg[i] != '%' || i+1 >= len(msg) {
+			continue
+		}
+		if msg[i+1] == '%' {
+			i++
+			continue
+		}
+		count++
+	}
+	return count
 }

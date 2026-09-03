@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ZanOzair/supportone/internal/checks"
+	_ "github.com/ZanOzair/supportone/internal/checks/all"
 	"github.com/ZanOzair/supportone/internal/consent"
 	"github.com/ZanOzair/supportone/internal/i18n"
 	"github.com/ZanOzair/supportone/internal/platform"
@@ -194,7 +195,7 @@ func writeText(w io.Writer, bundle *i18n.Bundle, snap checks.Snapshot, host plat
 		fmt.Fprintf(w, "\n%s\n\n", bundle.T("agent.checks.available", len(snap.Results), host.OS.Display()))
 		for _, res := range snap.Results {
 			fmt.Fprintf(w, "  [%s] %s — %s\n",
-				bundle.T("severity."+string(res.Severity)), res.CheckID, bundle.T(res.Summary))
+				bundle.T("severity."+string(res.Severity)), res.CheckID, bundle.T(res.Summary, res.Args...))
 		}
 	}
 

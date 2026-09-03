@@ -100,7 +100,7 @@ func (c volumesCheck) Run(ctx context.Context) (checks.Result, error) {
 	case tightest.FreePercent() < lowSpacePercent:
 		return checks.Attention(keyVolumesLow, tightest.Mount, free, percent).With(detail), nil
 	default:
-		return checks.OK(keyVolumesOK, len(volumes), tightest.Mount, free).With(detail), nil
+		return checks.OK(checks.PluralKey(keyVolumesOK, len(volumes)), len(volumes), tightest.Mount, free).With(detail), nil
 	}
 }
 
@@ -158,7 +158,7 @@ func (c smartCheck) Run(ctx context.Context) (checks.Result, error) {
 	case unknown == len(disks):
 		return checks.Unknown(keySMARTUnknown).With(detail), nil
 	default:
-		return checks.OK(keySMARTOK, len(disks)).With(detail), nil
+		return checks.OK(checks.PluralKey(keySMARTOK, len(disks)), len(disks)).With(detail), nil
 	}
 }
 

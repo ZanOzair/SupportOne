@@ -63,3 +63,16 @@ const (
 	KeyCheckFailed = "check.unknown.failed"
 	KeyNeedsAdmin  = "check.unknown.needs_admin"
 )
+
+// PluralKey picks the singular variant of a message key when the count is one.
+//
+// English needs "1 drive checked" where it needs "3 drives checked"; Bahasa
+// Melayu does not inflect, so its catalog carries the same text under both
+// keys. Languages with richer plural rules can be given more variants without
+// changing any check.
+func PluralKey(base string, n int) string {
+	if n == 1 {
+		return base + ".one"
+	}
+	return base
+}
