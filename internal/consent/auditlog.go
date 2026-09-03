@@ -31,6 +31,7 @@ const (
 	EventFixPreflight  EventType = "FIX_PREFLIGHT"
 	EventFixApplied    EventType = "FIX_APPLIED"
 	EventFixRolledBack EventType = "FIX_ROLLED_BACK"
+	EventWizardEnded   EventType = "WIZARD_ENDED"
 	EventDataSent      EventType = "DATA_SENT"
 )
 

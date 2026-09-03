@@ -29,6 +29,22 @@ func (s *Server) routes() http.Handler {
 	mux.Handle("GET /api/report", s.api(s.handleReport))
 	mux.Handle("POST /api/close", s.api(s.handleClose))
 
+	// Everything below can change the machine, and every one of them goes
+	// through internal/remediate: nothing here decides that a change is a
+	// good idea, and nothing here can name a fix that was not compiled in.
+	mux.Handle("GET /api/fixes", s.api(s.handleFixes))
+	mux.Handle("POST /api/fixes/plan", s.api(s.handlePlan))
+	mux.Handle("POST /api/fixes/apply", s.api(s.handleApply))
+	mux.Handle("POST /api/fixes/rollback", s.api(s.handleRollback))
+
+	mux.Handle("GET /api/wizards", s.api(s.handleWizards))
+	mux.Handle("GET /api/wizards/escalation", s.api(s.handleEscalation))
+	mux.Handle("POST /api/wizards/start", s.api(s.handleWizardStart))
+	mux.Handle("POST /api/wizards/next", s.api(s.handleWizardMove("next")))
+	mux.Handle("POST /api/wizards/confirm", s.api(s.handleWizardMove("confirm")))
+	mux.Handle("POST /api/wizards/skip", s.api(s.handleWizardMove("skip")))
+	mux.Handle("POST /api/wizards/stop", s.api(s.handleWizardMove("stop")))
+
 	// The interface itself is static and carries no data; the snapshot only
 	// ever arrives through the token-protected API above.
 	mux.Handle("/", s.static())

@@ -19,10 +19,16 @@ import (
 	"github.com/ZanOzair/SupportOne/internal/checks"
 	_ "github.com/ZanOzair/SupportOne/internal/checks/all"
 	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/fixes"
+	_ "github.com/ZanOzair/SupportOne/internal/fixes/all"
 	"github.com/ZanOzair/SupportOne/internal/i18n"
 	"github.com/ZanOzair/SupportOne/internal/localui"
 	"github.com/ZanOzair/SupportOne/internal/platform"
 	"github.com/ZanOzair/SupportOne/internal/redact"
+	"github.com/ZanOzair/SupportOne/internal/remediate"
+	"github.com/ZanOzair/SupportOne/internal/restore"
+	"github.com/ZanOzair/SupportOne/internal/wizard"
+	_ "github.com/ZanOzair/SupportOne/internal/wizard/all"
 	agentui "github.com/ZanOzair/SupportOne/web/agent-ui"
 )
 
@@ -40,6 +46,10 @@ type options struct {
 	dryRun      bool
 	lang        string
 	listChecks  bool
+	listFixes   bool
+	listWizards bool
+	fix         string
+	wizard      string
 	auditPath   string
 	timeout     time.Duration
 	idleTimeout time.Duration
@@ -48,13 +58,13 @@ type options struct {
 }
 
 func main() {
-	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
+	if err := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintf(os.Stderr, "supportone-agent: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(args []string, stdout, stderr io.Writer) error {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	opts, err := parseFlags(args, stderr)
 	if err != nil {
 		return err
@@ -87,8 +97,13 @@ func run(args []string, stdout, stderr io.Writer) error {
 	}
 	defer func() { _ = audit.Close() }()
 
-	if opts.listChecks {
+	switch {
+	case opts.listChecks:
 		return listChecks(stdout, bundle, host)
+	case opts.listFixes:
+		return listFixes(stdout, bundle, host)
+	case opts.listWizards:
+		return listWizards(stdout, bundle, host)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -112,6 +127,10 @@ func run(args []string, stdout, stderr io.Writer) error {
 	// The terminal modes exist for technicians and scripts. Anyone who just
 	// runs the file gets the interface.
 	switch {
+	case opts.fix != "":
+		return applyFix(ctx, stdin, stdout, bundle, audit, host, opts)
+	case opts.wizard != "":
+		return runWizard(ctx, stdin, stdout, bundle, audit, host, opts)
 	case opts.json:
 		snap := takeSnapshot(ctx, audit, host, opts)
 		enc := json.NewEncoder(stdout)
@@ -135,6 +154,10 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	fs.BoolVar(&opts.dryRun, "dry-run", false, "report what would change without changing anything")
 	fs.StringVar(&opts.lang, "lang", "", "language tag, e.g. en or ms (default: system language)")
 	fs.BoolVar(&opts.listChecks, "list-checks", false, "list the checks available on this computer and exit")
+	fs.BoolVar(&opts.listFixes, "list-fixes", false, "list the repairs available on this computer and exit")
+	fs.BoolVar(&opts.listWizards, "list-wizards", false, "list the guided walkthroughs available on this computer and exit")
+	fs.StringVar(&opts.fix, "fix", "", "describe one repair and, after you confirm it, apply it")
+	fs.StringVar(&opts.wizard, "wizard", "", "walk through one problem step by step")
 	fs.StringVar(&opts.auditPath, "audit-log", "", "path to the audit log (default: per-user config directory)")
 	fs.DurationVar(&opts.timeout, "timeout", checks.DefaultTimeout, "time limit for a single check")
 	fs.DurationVar(&opts.idleTimeout, "idle-timeout", localui.DefaultIdleTimeout, "close the interface after this long with nobody using it")
@@ -149,6 +172,9 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	}
 	if opts.json && opts.text {
 		return options{}, fmt.Errorf("--json and --text ask for two different outputs; choose one")
+	}
+	if opts.fix != "" && opts.wizard != "" {
+		return options{}, fmt.Errorf("--fix and --wizard ask for two different things; choose one")
 	}
 	return opts, nil
 }
@@ -195,18 +221,31 @@ func takeSnapshot(ctx context.Context, audit *consent.Log, host platform.Host, o
 	return snap
 }
 
+// newApplier builds the one path through which anything on this machine can
+// change: the registry of compiled-in fixes, the audit log, and the platform's
+// restore mechanism.
+func newApplier(audit *consent.Log, host platform.Host, opts options) *remediate.Applier {
+	applier := remediate.New(fixes.Default, audit, restore.New(), host.OS)
+	applier.DryRun = opts.dryRun
+	return applier
+}
+
 func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform.Host, opts options) error {
 	server, err := localui.New(localui.Config{
 		Assets: agentui.Assets,
 		Snapshot: func(ctx context.Context) checks.Snapshot {
 			return takeSnapshot(ctx, audit, host, opts)
 		},
-		Audit:       audit,
-		Version:     version,
-		Host:        host,
-		Identity:    redact.CurrentIdentity(),
-		Lang:        opts.lang,
-		IdleTimeout: opts.idleTimeout,
+		Audit:        audit,
+		Version:      version,
+		Host:         host,
+		Identity:     redact.CurrentIdentity(),
+		Lang:         opts.lang,
+		IdleTimeout:  opts.idleTimeout,
+		Fixes:        fixes.Default,
+		Applier:      newApplier(audit, host, opts),
+		Wizards:      wizard.Default,
+		CheckTimeout: opts.timeout,
 	})
 	if err != nil {
 		return err

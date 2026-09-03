@@ -27,8 +27,11 @@ import (
 
 	"github.com/ZanOzair/SupportOne/internal/checks"
 	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/fixes"
 	"github.com/ZanOzair/SupportOne/internal/platform"
 	"github.com/ZanOzair/SupportOne/internal/redact"
+	"github.com/ZanOzair/SupportOne/internal/remediate"
+	"github.com/ZanOzair/SupportOne/internal/wizard"
 )
 
 // DefaultIdleTimeout is how long the server waits with nobody using it before
@@ -54,6 +57,17 @@ type Config struct {
 	// Audit records what the user did here.
 	Audit *consent.Log
 
+	// Fixes, Applier and Wizards are what lets this interface change
+	// anything. All three are optional: a build with none of them serves a
+	// read-only agent, and the repair routes say so rather than failing
+	// obscurely.
+	Fixes   *fixes.Registry
+	Applier *remediate.Applier
+	Wizards *wizard.Registry
+
+	// CheckTimeout bounds one wizard question.
+	CheckTimeout time.Duration
+
 	Version     string
 	Host        platform.Host
 	Identity    redact.Identity
@@ -68,9 +82,13 @@ type Server struct {
 	listener net.Listener
 	http     *http.Server
 
-	mu       sync.Mutex
-	snapshot *checks.Snapshot
-	lastSeen time.Time
+	mu          sync.Mutex
+	snapshot    *checks.Snapshot
+	lastSeen    time.Time
+	escalations map[string]wizard.Escalation
+
+	// wizards holds the sessions this run is part-way through.
+	wizards *sessions
 
 	idle chan struct{}
 	once sync.Once
@@ -99,11 +117,13 @@ func New(cfg Config) (*Server, error) {
 	}
 
 	s := &Server{
-		cfg:      cfg,
-		token:    token,
-		listener: listener,
-		lastSeen: time.Now(),
-		idle:     make(chan struct{}),
+		cfg:         cfg,
+		token:       token,
+		listener:    listener,
+		lastSeen:    time.Now(),
+		idle:        make(chan struct{}),
+		escalations: make(map[string]wizard.Escalation),
+		wizards:     newSessions(),
 	}
 	s.http = &http.Server{
 		Handler:           s.routes(),
