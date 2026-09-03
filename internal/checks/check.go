@@ -48,6 +48,9 @@ type Result struct {
 	// same result renders in every supported language.
 	Summary string `json:"summary"`
 
+	// Args fill the placeholders in Summary.
+	Args []any `json:"summary_args,omitempty"`
+
 	// Detail carries the structured evidence behind Summary. It is what the
 	// report renders and what the user reviews and redacts before any send.
 	Detail map[string]any `json:"detail,omitempty"`
