@@ -1,4 +1,14 @@
-import type { RedactionPolicy, Session, Snapshot } from './types';
+import type {
+  ApplyResult,
+  Confirmation,
+  FixSummary,
+  Plan,
+  RedactionPolicy,
+  Session,
+  Snapshot,
+  WizardSession,
+  WizardSummary,
+} from './types';
 
 /**
  * The session token arrives once, in the URL the agent opened. It is kept in
@@ -72,4 +82,54 @@ export function reportURL(format: 'html' | 'json', policy: RedactionPolicy, lang
 
 export function closeSession(): Promise<{ status: string }> {
   return request('/api/close', { method: 'POST' });
+}
+
+function post<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchFixes(): Promise<FixSummary[]> {
+  return request<FixSummary[]>('/api/fixes');
+}
+
+/** Describes a repair. This is read-only: nothing changes until apply. */
+export function planFix(fixID: string): Promise<Plan> {
+  return post<Plan>('/api/fixes/plan', { fix_id: fixID });
+}
+
+export function applyFix(confirmation: Confirmation): Promise<ApplyResult> {
+  return post<ApplyResult>('/api/fixes/apply', confirmation);
+}
+
+export function rollbackFix(fixID: string): Promise<{ status: string }> {
+  return post('/api/fixes/rollback', { fix_id: fixID });
+}
+
+export function fetchWizards(): Promise<WizardSummary[]> {
+  return request<WizardSummary[]>('/api/wizards');
+}
+
+export function startWizard(wizardID: string): Promise<WizardSession> {
+  return post<WizardSession>('/api/wizards/start', { wizard_id: wizardID });
+}
+
+export function wizardMove(
+  move: 'next' | 'skip' | 'stop',
+  sessionID: string,
+): Promise<WizardSession> {
+  return post<WizardSession>(`/api/wizards/${move}`, { session_id: sessionID });
+}
+
+export function wizardConfirm(
+  sessionID: string,
+  confirmation: Confirmation,
+): Promise<WizardSession> {
+  return post<WizardSession>('/api/wizards/confirm', {
+    session_id: sessionID,
+    confirmation,
+  });
 }

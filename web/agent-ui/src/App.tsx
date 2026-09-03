@@ -1,22 +1,36 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   closeSession,
+  fetchFixes,
   fetchMessages,
   fetchSession,
   fetchSnapshot,
+  fetchWizards,
   hasToken,
   previewRedaction,
   reportURL,
   runChecks,
 } from './api';
 import { ResultCard, SummaryCounts, Toggle } from './components';
+import { RepairList } from './fixes';
 import { translator } from './i18n';
-import { fullRedaction, redacts, type RedactionPolicy, type Session, type Snapshot } from './types';
+import {
+  fullRedaction,
+  redacts,
+  type FixSummary,
+  type RedactionPolicy,
+  type Session,
+  type Snapshot,
+  type WizardSummary,
+} from './types';
+import { WizardList } from './wizards';
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [fixes, setFixes] = useState<FixSummary[]>([]);
+  const [wizards, setWizards] = useState<WizardSummary[]>([]);
   const [lang, setLang] = useState('');
   const [busy, setBusy] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -56,6 +70,20 @@ export default function App() {
     }
     fetchSnapshot()
       .then(setSnapshot)
+      .catch((err: Error) => setError(err.message));
+  }, [session]);
+
+  // What this build can change, and the walkthroughs it offers. A read-only
+  // build returns nothing for both and neither section is shown.
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+    fetchFixes()
+      .then(setFixes)
+      .catch((err: Error) => setError(err.message));
+    fetchWizards()
+      .then(setWizards)
       .catch((err: Error) => setError(err.message));
   }, [session]);
 
@@ -201,6 +229,9 @@ export default function App() {
               </ul>
             </section>
           )}
+
+          <WizardList wizards={wizards} t={t} onError={setError} />
+          <RepairList fixes={fixes} t={t} onError={setError} />
 
           <section className="mt-10 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <h2 className="text-lg font-semibold">{t('ui.save')}</h2>

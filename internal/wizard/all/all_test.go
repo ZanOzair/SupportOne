@@ -93,6 +93,7 @@ func TestEveryMessageKeyIsTranslated(t *testing.T) {
 	}
 	keys = append(keys, engineKeys...)
 	keys = append(keys, findingKeys...)
+	keys = append(keys, interfaceKeys...)
 
 	for _, key := range keys {
 		if got := bundle.T(key); got == key {
@@ -122,6 +123,32 @@ var findingKeys = []string{
 	printing.KeyQueueEmpty, printing.KeyQueueStuck, printing.KeyQueueStuckOne,
 	printing.KeyQueueUnreadable,
 	printing.KeyPrinterSet, printing.KeyPrinterNone, printing.KeyPrinterUnreadable,
+}
+
+// interfaceKeys are the labels the walkthrough screens use, including one per
+// step status: a status with no label would render as a bare key beside the
+// answer it belongs to.
+var interfaceKeys = []string{
+	"ui.wizards.heading", "ui.wizards.note", "ui.wizards.start",
+	"ui.wizards.continue", "ui.wizards.stop", "ui.wizards.done",
+
+	"agent.wizards.none", "agent.wizards.available", "agent.wizard.summary",
+}
+
+// TestEveryStepStatusHasALabel walks the statuses rather than listing them, so
+// adding a ninth one to the engine fails here until the catalogs carry it.
+func TestEveryStepStatusHasALabel(t *testing.T) {
+	bundle, err := i18n.Load(i18n.Base)
+	if err != nil {
+		t.Fatalf("load catalog: %v", err)
+	}
+
+	for _, status := range wizard.AllStatuses() {
+		key := "ui.wizards.status." + string(status)
+		if got := bundle.T(key); got == key {
+			t.Errorf("step status %q has no label at %q", status, key)
+		}
+	}
 }
 
 // TestEveryWizardCarriesKeysNotProse keeps English sentences out of the code

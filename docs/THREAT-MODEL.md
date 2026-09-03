@@ -44,10 +44,17 @@ Residual risk: any process on the machine running as the user can read the token
 - Fixes are compiled in. They are reachable only by exact ID lookup against the registry.
 - Nothing downloads and executes code at runtime. There is no `eval`, no plugin loading from disk, no script fetched from a server.
 - No shell command is assembled from user input or model output. The commands a fix runs are fixed at compile time.
-- A mutating action requires confirmation of that specific action, against an explicit list of what will change.
-- Elevation is requested for the one action that needs it, at the moment it runs, and dropped after.
+- A mutating action requires confirmation of that specific action, against an explicit list of what will change. `internal/remediate` enforces this: a plan token is single-use, and an acknowledgement that does not repeat the plan's change list, in order, is refused and logged as a denial.
+- Elevation is requested for the one action that needs it, at the moment it runs, and dropped after. A fix that declares it needs rights the agent does not hold is described but not offered.
+- A fix that clears files moves them into a quarantine directory rather than deleting them, so the rollback is a rename rather than a restore from nothing.
+- Where a change cannot be undone, the fix reports `Reversible() == false` and the interface says so. Nothing claims an undo it does not have.
 
-Residual risk: a fix is still code that changes a machine. A bug in a fix can break something. This is mitigated by restore points, rollback implementations, and a rollback test per fix — not eliminated.
+Residual risks, none of them eliminated:
+
+- A fix is still code that changes a machine. A bug in a fix can break something. Restore points, rollback implementations and a rollback test per fix reduce this; they do not remove it.
+- A rollback can itself fail — a file put back where something else now sits, a service that will not restart. The quarantine reports a partial restore rather than claiming success, and the fix stays on the list of things still applied, but the machine is left in a state the user has to be told about.
+- On Linux no system restore point exists. The user is told, and the decision to proceed without one is theirs and is recorded.
+- A confirmation is only as meaningful as the interface presenting it. The gate can prove the change list was reproduced; it cannot prove a human read it.
 
 ### AI assistant *(Phase 3)*
 

@@ -111,6 +111,7 @@ func TestEveryMessageKeyIsTranslated(t *testing.T) {
 		keys = append(keys, e.Changes...)
 	}
 	keys = append(keys, outcomeKeys...)
+	keys = append(keys, interfaceKeys...)
 
 	for _, key := range keys {
 		if got := bundle.T(key); got == key {
@@ -133,6 +134,22 @@ var outcomeKeys = []string{
 
 	spooler.KeyBlockedEmpty, spooler.KeyBlockedUnreadable,
 	spooler.KeyOutcomeCleared, spooler.KeyOutcomeCleared + ".one",
+}
+
+// interfaceKeys are the labels the repair screens use. They live in the same
+// catalogs, so the same guard covers them.
+var interfaceKeys = []string{
+	"ui.fixes.heading", "ui.fixes.note", "ui.fixes.not_reversible", "ui.fixes.describe",
+
+	"ui.fix.changes", "ui.fix.undo", "ui.fix.restore_available", "ui.fix.restore_unavailable",
+	"ui.fix.accept_no_restore", "ui.fix.blocked", "ui.fix.needs_admin", "ui.fix.apply",
+	"ui.fix.cancel", "ui.fix.acknowledge_first", "ui.fix.restore_point", "ui.fix.undo_now",
+
+	"agent.fixes.none", "agent.fixes.available", "agent.fixes.not_reversible",
+	"agent.fix.changes", "agent.fix.undo", "agent.fix.restore_available",
+	"agent.fix.restore_unavailable", "agent.fix.blocked", "agent.fix.needs_admin",
+	"agent.fix.confirm", "agent.fix.confirm_no_restore", "agent.fix.aborted",
+	"agent.fix.restore_point", "agent.fix.undo_now", "agent.fix.undone",
 }
 
 // TestEveryFixCarriesKeysNotProse keeps English sentences out of the code that

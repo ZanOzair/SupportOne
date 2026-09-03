@@ -32,8 +32,15 @@ internal/
     cim/                shared decoder for Windows CIM/WMI JSON
     system/ storage/ network/ events/
     updates/ startup/ security/ drivers/
-  fixes/                remediation plugin contract + registry
-  consent/              audit log, consent flow, restore points
+  fixes/                remediation plugin contract + registry + quarantine
+    all/                the whitelist: which fixes are compiled in
+    temp/ dns/ spooler/
+  remediate/            the consent gate every change passes through
+  restore/              system restore points, per platform
+  wizard/               the step engine: ask, offer, change, ask again
+    all/                the whitelist: which walkthroughs are compiled in
+    connection/ printing/
+  consent/              the append-only audit log
   localui/              the loopback server that hosts the interface
   redact/               removing identifying detail before anything is saved
   report/               HTML and JSON rendering
@@ -90,6 +97,20 @@ The registry refuses to accept a fix that cannot describe what it changes, becau
 
 `Registry.Resolve` is the single gate every suggestion passes through, including suggestions from the optional AI assistant: candidate IDs are matched against the registry and the current platform, and anything unrecognised is discarded before the user ever sees it. There is no path from a string to an action except a compiled-in fix whose ID matches exactly.
 
+## The consent gate
+
+`internal/remediate` is the single path from "a fix exists" to "a machine changed". `Plan` describes the fix and changes nothing. `Apply` refuses unless it is handed that plan's single-use token together with an acknowledgement repeating the exact change list the plan showed — a caller that cannot reproduce the list did not display it. It also refuses a blocked preflight, a fix whose rights the agent does not hold, and a change with no restore point behind it unless the user says so out loud. `Rollback` undoes what the session applied, and a rollback that fails leaves the fix on the list of things still applied.
+
+`internal/restore` is the wider net: a Windows System Restore checkpoint, an APFS local snapshot on macOS, and on Linux an honest report that no mechanism exists that every distribution has. `internal/fixes.Quarantine` is what makes "clear these files" reversible — files are moved to a holding directory on the same volume, never deleted.
+
+The rules and the reasoning for each shipped fix are in [FIXES.md](FIXES.md).
+
+## Wizards
+
+`internal/wizard` runs a sequence of read-only questions, each with at most one thing to try. The rule that makes it more than a script: after anything is changed, the same question is asked again, and only that re-check decides whether the step is recorded as fixed. A step whose repair cannot be checked this way — a cache that refills itself — is marked unverifiable and recorded as *changed*, never as fixed.
+
+`FromCheck` turns a registered diagnostic check into a wizard question, so a walkthrough inherits the platform work the checks already do rather than growing a shallower second copy of it. A check that reports `unknown` produces a step that reports unknown; it never quietly passes.
+
 ## The local interface
 
 The agent serves its own interface rather than shipping a GUI toolkit, so the same screens render on every OS and the binary stays a few megabytes.
@@ -118,7 +139,7 @@ It is append-only, created `0600`, and values are escaped so a field can never f
 |---|---|---|
 | 0 | Registries, platform layer, audit log, i18n, CI | Six targets build, CI green |
 | 1 | Snapshot: 12 checks, local web UI, HTML+JSON report, redaction | A report worth sending a client |
-| 2 | Fixes and guided wizards, restore points, consent flow | Every fix has a passing rollback test |
+| 2 | Fixes and guided wizards, restore points, consent flow | Every fix has a passing rollback test — done |
 | 3 | Tier-1 offline explainer, optional Tier-2 LLM, performance and backup analysis | Every check result explained offline, no API key |
 | 4 | Patch reporter, screenshot-to-ticket, optional server and dashboard | Compose up, technician sees a real fleet |
 | 5 | Remote-help consent wrapper, provisioning, scheduled reports | A monthly client report generates end to end |

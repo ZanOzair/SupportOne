@@ -163,6 +163,15 @@ const (
 	StatusUnknown  StepStatus = "unknown"  // the question could not be answered
 )
 
+// AllStatuses returns every state a step can end in. The interface renders a
+// label for each, so this is what a guard test checks the catalogs against.
+func AllStatuses() []StepStatus {
+	return []StepStatus{
+		StatusClean, StatusFound, StatusFixed, StatusApplied,
+		StatusNoHelp, StatusDeclined, StatusBlocked, StatusUnknown,
+	}
+}
+
 // Record is the history of one step, for the user and for a technician.
 type Record struct {
 	StepID  string     `json:"step_id"`
