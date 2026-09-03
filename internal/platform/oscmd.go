@@ -26,6 +26,20 @@ const maxOutput = 8 << 20 // 8 MiB
 // Arguments that vary (a device path, a day count) are values the agent itself
 // derived, passed as separate argv entries.
 func RunRead(ctx context.Context, name string, args ...string) ([]byte, error) {
+	return run(ctx, name, args...)
+}
+
+// RunAction executes a compiled-in OS command that changes the machine.
+//
+// It is the same mechanism as RunRead — no shell, constant command names,
+// argv passed as separate entries — under a different name, because the
+// difference that matters is who may call it. Only a Fix calls RunAction, and
+// only after the user has confirmed that specific change.
+func RunAction(ctx context.Context, name string, args ...string) ([]byte, error) {
+	return run(ctx, name, args...)
+}
+
+func run(ctx context.Context, name string, args ...string) ([]byte, error) {
 	if strings.ContainsAny(name, "|&;<>()$`\\\"'") {
 		return nil, fmt.Errorf("platform: refusing to run %q: command names are compiled-in constants", name)
 	}

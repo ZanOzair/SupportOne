@@ -42,7 +42,14 @@ type Outcome struct {
 	// deliberately changed nothing.
 	DryRun bool `json:"dry_run"`
 
-	Detail    string        `json:"detail,omitempty"`
+	// Detail says what happened, as a message key resolved through
+	// internal/i18n rather than English prose, so the record of a change
+	// reads in the same language as the rest of the interface.
+	Detail string `json:"detail,omitempty"`
+
+	// DetailArgs fill the placeholders in Detail.
+	DetailArgs []any `json:"detail_args,omitempty"`
+
 	StartedAt time.Time     `json:"started_at"`
 	Duration  time.Duration `json:"duration_ns"`
 }
