@@ -4,16 +4,17 @@ package drivers
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/ZanOzair/SupportOne/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
-// collectProblemDevices exists so the package builds everywhere, but the check
-// declares Windows as its only platform, so this is never reached through a
-// snapshot. It returns an error rather than an empty list: an empty list would
-// claim there are no problem devices on a platform that was never asked.
-func collectProblemDevices(context.Context, platform.Runner) ([]device, error) {
-	return nil, fmt.Errorf("drivers: device error states are a Windows concept; this check does not run on %s",
-		platform.Current().Display())
+// Run reports that the check does not apply on this platform.
+//
+// macOS and Linux have no equivalent of a device Windows has flagged as not
+// working, so there is nothing to collect and nothing to fail at. The registry
+// only offers this check on Windows; if it is reached anyway, it says it has no
+// answer rather than reporting that every device is fine on a platform it never
+// asked.
+func (problemCheck) Run(context.Context) (checks.Result, error) {
+	return checks.Unknown(keyDriversNotApplicable), nil
 }

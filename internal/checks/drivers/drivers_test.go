@@ -53,4 +53,7 @@ func TestRunOffWindowsSaysSoRatherThanReportingNoProblems(t *testing.T) {
 	if res.Severity != checks.SeverityUnknown {
 		t.Errorf("severity = %q, want unknown", res.Severity)
 	}
+	if res.Summary != keyDriversNotApplicable {
+		t.Errorf("summary = %q, want the not-applicable message", res.Summary)
+	}
 }

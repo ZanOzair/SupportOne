@@ -1,0 +1,12 @@
+# Normalise line endings so the same source builds and tests identically on
+# every platform.
+* text=auto eol=lf
+
+# Golden files are compared byte for byte against freshly rendered output. A
+# checkout that rewrote their line endings would fail that comparison on
+# Windows for a difference that is not in the code.
+internal/report/testdata/*.html -text
+
+# The committed interface build is an artifact: CI compares it against a fresh
+# build, so it must survive checkout unchanged.
+web/agent-ui/dist/** -text

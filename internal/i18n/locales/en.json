@@ -44,6 +44,7 @@
   "check.drivers.problem.ok": "Every device reports that it is working.",
   "check.drivers.problem.found": "%d devices are not working properly: %s.",
   "check.drivers.problem.found.one": "%d device is not working properly: %s.",
+  "check.drivers.problem.not_applicable": "This check only applies to Windows, which is where devices report an error state.",
   "check.startup.items.ok": "%d programs start on their own when you log in.",
   "check.startup.items.ok.one": "%d program starts on its own when you log in.",
   "check.startup.items.none": "Nothing is set to start on its own when you log in.",

@@ -3,7 +3,7 @@ package drivers
 import (
 	"context"
 
-	"github.com/ZanOzair/SupportOne/internal/platform"
+	"github.com/ZanOzair/SupportOne/internal/checks"
 )
 
 // Compiled-in query; see platform.RunRead.
@@ -14,10 +14,15 @@ const (
 		`Select-Object Name,DeviceID,ConfigManagerErrorCode | ConvertTo-Json -Compress`
 )
 
-func collectProblemDevices(ctx context.Context, run platform.Runner) ([]device, error) {
-	out, err := run(ctx, psExe, "-NoProfile", "-NonInteractive", "-Command", queryProblemDevices)
+func (c problemCheck) Run(ctx context.Context) (checks.Result, error) {
+	out, err := c.run(ctx, psExe, "-NoProfile", "-NonInteractive", "-Command", queryProblemDevices)
 	if err != nil {
-		return nil, err
+		return checks.UnknownFor(err), nil
 	}
-	return parseProblemDevices(out)
+
+	devices, err := parseProblemDevices(out)
+	if err != nil {
+		return checks.UnknownFor(err), nil
+	}
+	return problemVerdict(devices), nil
 }

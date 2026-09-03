@@ -110,6 +110,7 @@ var messageKeys = []string{
 	"check.network.config.interfaces_unreadable",
 
 	"check.drivers.problem.ok", "check.drivers.problem.found", "check.drivers.problem.found.one",
+	"check.drivers.problem.not_applicable",
 	"check.startup.items.ok", "check.startup.items.ok.one", "check.startup.items.none",
 
 	"check.updates.os.ok", "check.updates.os.pending", "check.updates.os.pending.one", "check.updates.os.stale",

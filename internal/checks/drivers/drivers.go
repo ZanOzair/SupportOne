@@ -7,7 +7,6 @@
 package drivers
 
 import (
-	"context"
 	"strings"
 
 	"github.com/ZanOzair/SupportOne/internal/checks"
@@ -26,6 +25,11 @@ type device struct {
 const (
 	keyDriversOK      = "check.drivers.problem.ok"
 	keyDriversProblem = "check.drivers.problem.found"
+
+	// keyDriversNotApplicable is what the check says on a platform that has no
+	// notion of a device in an error state. The registry never offers it
+	// there, so this is a belt-and-braces answer rather than a routine one.
+	keyDriversNotApplicable = "check.drivers.problem.not_applicable"
 )
 
 type problemCheck struct{ run platform.Runner }
@@ -33,14 +37,6 @@ type problemCheck struct{ run platform.Runner }
 func (problemCheck) ID() string               { return "drivers.problem" }
 func (problemCheck) Platforms() []platform.OS { return []platform.OS{platform.Windows} }
 func (problemCheck) RequiresAdmin() bool      { return false }
-
-func (c problemCheck) Run(ctx context.Context) (checks.Result, error) {
-	devices, err := collectProblemDevices(ctx, c.run)
-	if err != nil {
-		return checks.UnknownFor(err), nil
-	}
-	return problemVerdict(devices), nil
-}
 
 // problemVerdict names the devices Windows says are not working. It is
 // separate from collection so it can be tested on any machine.

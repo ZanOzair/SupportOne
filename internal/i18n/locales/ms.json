@@ -44,6 +44,7 @@
   "check.drivers.problem.ok": "Setiap peranti melaporkan bahawa ia berfungsi.",
   "check.drivers.problem.found": "%d peranti tidak berfungsi dengan betul: %s.",
   "check.drivers.problem.found.one": "%d peranti tidak berfungsi dengan betul: %s.",
+  "check.drivers.problem.not_applicable": "Pemeriksaan ini hanya berkaitan dengan Windows, di mana peranti melaporkan keadaan ralat.",
   "check.startup.items.ok": "%d program bermula sendiri apabila anda log masuk.",
   "check.startup.items.ok.one": "%d program bermula sendiri apabila anda log masuk.",
   "check.startup.items.none": "Tiada apa-apa ditetapkan untuk bermula sendiri apabila anda log masuk.",
