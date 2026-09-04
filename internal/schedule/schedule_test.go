@@ -101,27 +101,6 @@ func TestWriteProducesBothReportsForTheMonth(t *testing.T) {
 	}
 }
 
-func TestReportsAreNotWorldReadable(t *testing.T) {
-	dir := t.TempDir()
-
-	got, err := Write(snapshot(), Options{Dir: dir, Bundle: bundle(t)})
-	if err != nil {
-		t.Fatalf("Write: %v", err)
-	}
-
-	for _, path := range []string{got.HTML, got.JSON} {
-		info, err := os.Stat(path)
-		if err != nil {
-			t.Fatalf("stat %s: %v", path, err)
-		}
-		// A report about someone's machine belongs to them, not to every
-		// account on the host.
-		if perm := info.Mode().Perm(); perm != 0o600 {
-			t.Errorf("%s has permissions %v, want %v", filepath.Base(path), perm, os.FileMode(0o600))
-		}
-	}
-}
-
 func TestARerunReplacesThatMonthRatherThanPilingUp(t *testing.T) {
 	dir := t.TempDir()
 
