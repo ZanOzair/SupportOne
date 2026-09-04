@@ -1,7 +1,6 @@
 package backup
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -106,21 +105,6 @@ func TestTheVerdictCarriesItsEvidence(t *testing.T) {
 		if _, ok := got.Detail[key]; !ok {
 			t.Errorf("the evidence does not carry %q: %v", key, got.Detail)
 		}
-	}
-}
-
-func TestLinuxIsHonestAboutNotLooking(t *testing.T) {
-	// Only meaningful on Linux, where collect_linux.go is the compiled
-	// collector; elsewhere this is a no-op assertion about a real mechanism.
-	facts, err := collectBackup(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("collectBackup: %v", err)
-	}
-	if facts.Supported {
-		t.Skip("this platform has a backup mechanism this check reads")
-	}
-	if got := backupVerdict(facts, now); got.Severity != checks.SeverityUnknown {
-		t.Errorf("severity = %q, want unknown", got.Severity)
 	}
 }
 

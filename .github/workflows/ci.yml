@@ -162,6 +162,11 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+      # A 400 here reading "Invalid package tree" is the registry rejecting an
+      # incomplete package-lock.json, not a flake and not the audit endpoint
+      # being down. Run `npm install --package-lock-only` and commit the
+      # result; bundled sub-dependencies of an optional platform package are
+      # the usual thing missing.
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
