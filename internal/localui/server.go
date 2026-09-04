@@ -25,8 +25,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ZanOzair/SupportOne/internal/assist"
 	"github.com/ZanOzair/SupportOne/internal/checks"
 	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/explain"
 	"github.com/ZanOzair/SupportOne/internal/fixes"
 	"github.com/ZanOzair/SupportOne/internal/platform"
 	"github.com/ZanOzair/SupportOne/internal/redact"
@@ -67,6 +69,14 @@ type Config struct {
 
 	// CheckTimeout bounds one wizard question.
 	CheckTimeout time.Duration
+
+	// Explainer turns each finding into plain language, offline. Optional:
+	// without it the interface shows verdicts and no advice.
+	Explainer *explain.Explainer
+
+	// Assistant is the optional second tier. Nil, or present and switched
+	// off, means the interface never offers to send anything anywhere.
+	Assistant *assist.Assistant
 
 	Version     string
 	Host        platform.Host

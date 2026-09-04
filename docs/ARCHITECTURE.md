@@ -32,6 +32,7 @@ internal/
     cim/                shared decoder for Windows CIM/WMI JSON
     system/ storage/ network/ events/
     updates/ startup/ security/ drivers/
+    performance/ backup/
   fixes/                remediation plugin contract + registry + quarantine
     all/                the whitelist: which fixes are compiled in
     temp/ dns/ spooler/
@@ -40,6 +41,8 @@ internal/
   wizard/               the step engine: ask, offer, change, ask again
     all/                the whitelist: which walkthroughs are compiled in
     connection/ printing/
+  explain/              Tier 1: every verdict explained, offline
+  assist/               Tier 2: the optional model, behind the egress gate
   consent/              the append-only audit log
   localui/              the loopback server that hosts the interface
   redact/               removing identifying detail before anything is saved
@@ -111,6 +114,12 @@ The rules and the reasoning for each shipped fix are in [FIXES.md](FIXES.md).
 
 `FromCheck` turns a registered diagnostic check into a wizard question, so a walkthrough inherits the platform work the checks already do rather than growing a shallower second copy of it. A check that reports `unknown` produces a step that reports unknown; it never quietly passes.
 
+## Explanations
+
+`internal/explain` maps every verdict a check can report to a plain-language cause and an ordered list of steps, from a table compiled into the binary. No network, no model, no key. The explanation key is derived from the verdict key rather than written beside it, so the two cannot drift, and every fix or walkthrough an explanation names is resolved through the registries first.
+
+`internal/assist` is the optional second tier and the only outbound connection in the codebase. It is off unless switched on, it shows the exact payload before sending, and its answer is contained: fix IDs through the registry, prose stripped and capped and shown as the model's own. [EXPLAINER.md](EXPLAINER.md) has the rules and the reasoning.
+
 ## The local interface
 
 The agent serves its own interface rather than shipping a GUI toolkit, so the same screens render on every OS and the binary stays a few megabytes.
@@ -140,6 +149,6 @@ It is append-only, created `0600`, and values are escaped so a field can never f
 | 0 | Registries, platform layer, audit log, i18n, CI | Six targets build, CI green |
 | 1 | Snapshot: 12 checks, local web UI, HTML+JSON report, redaction | A report worth sending a client |
 | 2 | Fixes and guided wizards, restore points, consent flow | Every fix has a passing rollback test — done |
-| 3 | Tier-1 offline explainer, optional Tier-2 LLM, performance and backup analysis | Every check result explained offline, no API key |
+| 3 | Tier-1 offline explainer, optional Tier-2 LLM, performance and backup analysis | Every check result explained offline, no API key — done |
 | 4 | Patch reporter, screenshot-to-ticket, optional server and dashboard | Compose up, technician sees a real fleet |
 | 5 | Remote-help consent wrapper, provisioning, scheduled reports | A monthly client report generates end to end |

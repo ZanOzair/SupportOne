@@ -13,6 +13,7 @@ import (
 
 	"github.com/ZanOzair/SupportOne/internal/checks"
 	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/explain"
 	"github.com/ZanOzair/SupportOne/internal/i18n"
 	"github.com/ZanOzair/SupportOne/internal/redact"
 	"github.com/ZanOzair/SupportOne/internal/report"
@@ -36,6 +37,17 @@ func (s *Server) routes() http.Handler {
 	mux.Handle("POST /api/fixes/plan", s.api(s.handlePlan))
 	mux.Handle("POST /api/fixes/apply", s.api(s.handleApply))
 	mux.Handle("POST /api/fixes/rollback", s.api(s.handleRollback))
+
+	// The offline explainer reads a compiled-in table and contacts nothing,
+	// so it sits with the read-only routes.
+	mux.Handle("GET /api/explain", s.api(s.handleExplain))
+
+	// The assistant is the one thing here that can reach outside this
+	// computer, and it does so only through prepare-then-ask.
+	mux.Handle("GET /api/assist", s.api(s.handleAssistState))
+	mux.Handle("POST /api/assist/prepare", s.api(s.handleAssistPrepare))
+	mux.Handle("POST /api/assist/ask", s.api(s.handleAssistAsk))
+	mux.Handle("POST /api/assist/discard", s.api(s.handleAssistDiscard))
 
 	mux.Handle("GET /api/wizards", s.api(s.handleWizards))
 	mux.Handle("GET /api/wizards/escalation", s.api(s.handleEscalation))
@@ -253,6 +265,9 @@ func (s *Server) handleReport(w http.ResponseWriter, r *http.Request) error {
 		if s.cfg.Audit != nil {
 			opts.AuditPath = s.cfg.Audit.Path()
 		}
+		// A saved report is read away from the machine, so the offline
+		// advice travels with it rather than living only on this screen.
+		opts.Advice = s.adviceFor(snap)
 		return report.HTML(w, snap, opts)
 	default:
 		return fmt.Errorf("unknown report format %q", format)
@@ -266,6 +281,19 @@ func (s *Server) handleClose(w http.ResponseWriter, _ *http.Request) error {
 	// Give the response a moment to reach the browser before the listener goes.
 	time.AfterFunc(200*time.Millisecond, s.Close)
 	return nil
+}
+
+// adviceFor explains a snapshot, keyed by check ID for the report renderer.
+func (s *Server) adviceFor(snap checks.Snapshot) map[string]explain.Advice {
+	if s.cfg.Explainer == nil {
+		return nil
+	}
+
+	out := make(map[string]explain.Advice)
+	for _, advice := range s.cfg.Explainer.ForSnapshot(snap) {
+		out[advice.CheckID] = advice
+	}
+	return out
 }
 
 // currentSnapshot returns the snapshot this session is showing, running the

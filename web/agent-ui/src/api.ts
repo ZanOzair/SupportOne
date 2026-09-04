@@ -1,5 +1,9 @@
 import type {
+  Advice,
   ApplyResult,
+  AssistAnswer,
+  AssistPayload,
+  AssistState,
   Confirmation,
   FixSummary,
   Plan,
@@ -132,4 +136,30 @@ export function wizardConfirm(
     session_id: sessionID,
     confirmation,
   });
+}
+
+/** The offline explanation of the current snapshot, worst first. */
+export function fetchAdvice(): Promise<Advice[]> {
+  return request<Advice[]>('/api/explain');
+}
+
+export function fetchAssistState(): Promise<AssistState> {
+  return request<AssistState>('/api/assist');
+}
+
+/**
+ * Builds the exact bytes that would leave this computer under the chosen
+ * redaction, and sends none of them. What the user confirms is the payload,
+ * not a description of it.
+ */
+export function prepareAssist(policy: RedactionPolicy): Promise<AssistPayload> {
+  return post<AssistPayload>('/api/assist/prepare', policy);
+}
+
+export function askAssist(token: string): Promise<AssistAnswer> {
+  return post<AssistAnswer>('/api/assist/ask', { token });
+}
+
+export function discardAssist(token: string): Promise<{ status: string }> {
+  return post('/api/assist/discard', { token });
 }

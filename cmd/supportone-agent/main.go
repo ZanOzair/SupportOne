@@ -16,9 +16,11 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/ZanOzair/SupportOne/internal/assist"
 	"github.com/ZanOzair/SupportOne/internal/checks"
 	_ "github.com/ZanOzair/SupportOne/internal/checks/all"
 	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/explain"
 	"github.com/ZanOzair/SupportOne/internal/fixes"
 	_ "github.com/ZanOzair/SupportOne/internal/fixes/all"
 	"github.com/ZanOzair/SupportOne/internal/i18n"
@@ -50,6 +52,14 @@ type options struct {
 	listWizards bool
 	fix         string
 	wizard      string
+	noExplain   bool
+
+	// The assistant is off unless every one of these is given. Nothing
+	// reaches the network on a default invocation.
+	assist         bool
+	assistEndpoint string
+	assistModel    string
+
 	auditPath   string
 	timeout     time.Duration
 	idleTimeout time.Duration
@@ -139,6 +149,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	case opts.text:
 		snap := takeSnapshot(ctx, audit, host, opts)
 		writeText(stdout, bundle, snap, host, opts, audit.Path())
+		if opts.assist {
+			return askAssistant(ctx, stdin, stdout, bundle, audit, host, snap, opts)
+		}
 		return nil
 	default:
 		return serveUI(ctx, stdout, audit, host, opts)
@@ -158,6 +171,10 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	fs.BoolVar(&opts.listWizards, "list-wizards", false, "list the guided walkthroughs available on this computer and exit")
 	fs.StringVar(&opts.fix, "fix", "", "describe one repair and, after you confirm it, apply it")
 	fs.StringVar(&opts.wizard, "wizard", "", "walk through one problem step by step")
+	fs.BoolVar(&opts.noExplain, "no-explain", false, "print verdicts without the plain-language explanation")
+	fs.BoolVar(&opts.assist, "assist", false, "offer to send the report to the model endpoint configured below")
+	fs.StringVar(&opts.assistEndpoint, "assist-endpoint", "", "an OpenAI-shaped chat completions URL; HTTPS, or http only on this computer")
+	fs.StringVar(&opts.assistModel, "assist-model", "", "the model to ask for at that endpoint")
 	fs.StringVar(&opts.auditPath, "audit-log", "", "path to the audit log (default: per-user config directory)")
 	fs.DurationVar(&opts.timeout, "timeout", checks.DefaultTimeout, "time limit for a single check")
 	fs.DurationVar(&opts.idleTimeout, "idle-timeout", localui.DefaultIdleTimeout, "close the interface after this long with nobody using it")
@@ -175,6 +192,14 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	}
 	if opts.fix != "" && opts.wizard != "" {
 		return options{}, fmt.Errorf("--fix and --wizard ask for two different things; choose one")
+	}
+	if opts.assist {
+		if opts.assistEndpoint == "" {
+			return options{}, fmt.Errorf("--assist needs --assist-endpoint: there is no default, and no endpoint is contacted without one")
+		}
+		if err := assist.CheckEndpoint(opts.assistEndpoint); err != nil {
+			return options{}, err
+		}
 	}
 	return opts, nil
 }
@@ -221,6 +246,23 @@ func takeSnapshot(ctx context.Context, audit *consent.Log, host platform.Host, o
 	return snap
 }
 
+// newExplainer builds the offline explainer over the compiled-in registries,
+// so an explanation can only ever offer a repair this binary carries.
+func newExplainer(host platform.Host) *explain.Explainer {
+	return explain.New(fixes.Default, wizard.Default, host.OS)
+}
+
+// newAssistant builds the optional second tier. It is off unless the user
+// asked for it and named an endpoint, and it contacts nothing until a specific
+// send is confirmed.
+func newAssistant(audit *consent.Log, host platform.Host, opts options) *assist.Assistant {
+	return assist.New(assist.Config{
+		Enabled:  opts.assist,
+		Endpoint: opts.assistEndpoint,
+		Model:    opts.assistModel,
+	}, fixes.Default, host.OS, audit)
+}
+
 // newApplier builds the one path through which anything on this machine can
 // change: the registry of compiled-in fixes, the audit log, and the platform's
 // restore mechanism.
@@ -246,6 +288,8 @@ func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform
 		Applier:      newApplier(audit, host, opts),
 		Wizards:      wizard.Default,
 		CheckTimeout: opts.timeout,
+		Explainer:    newExplainer(host),
+		Assistant:    newAssistant(audit, host, opts),
 	})
 	if err != nil {
 		return err
@@ -277,9 +321,14 @@ func writeText(w io.Writer, bundle *i18n.Bundle, snap checks.Snapshot, host plat
 		fmt.Fprintf(w, "\n%s\n", bundle.T("agent.checks.none"))
 	} else {
 		fmt.Fprintf(w, "\n%s\n\n", bundle.T("agent.checks.available", len(snap.Results), host.OS.Display()))
+
+		explainer := newExplainer(host)
 		for _, res := range snap.Results {
 			fmt.Fprintf(w, "  [%s] %s — %s\n",
 				bundle.T("severity."+string(res.Severity)), res.CheckID, bundle.T(res.Summary, res.Args...))
+			if !opts.noExplain {
+				writeAdvice(w, bundle, explainer, res)
+			}
 		}
 	}
 

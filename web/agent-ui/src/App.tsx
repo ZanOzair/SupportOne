@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   closeSession,
+  fetchAdvice,
+  fetchAssistState,
   fetchFixes,
   fetchMessages,
   fetchSession,
@@ -12,11 +14,14 @@ import {
   runChecks,
 } from './api';
 import { ResultCard, SummaryCounts, Toggle } from './components';
+import { Assistant } from './assistant';
 import { RepairList } from './fixes';
 import { translator } from './i18n';
 import {
   fullRedaction,
   redacts,
+  type Advice,
+  type AssistState,
   type FixSummary,
   type RedactionPolicy,
   type Session,
@@ -31,6 +36,8 @@ export default function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [fixes, setFixes] = useState<FixSummary[]>([]);
   const [wizards, setWizards] = useState<WizardSummary[]>([]);
+  const [advice, setAdvice] = useState<Advice[]>([]);
+  const [assist, setAssist] = useState<AssistState>({ enabled: false, pending: 0 });
   const [lang, setLang] = useState('');
   const [busy, setBusy] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -42,6 +49,10 @@ export default function App() {
   const [preview, setPreview] = useState<Snapshot | null>(null);
 
   const t = translator(messages);
+
+  // Advice is joined to its finding by check ID, so a result with no rule
+  // still renders its verdict rather than disappearing.
+  const adviceFor = new Map(advice.map((entry) => [entry.check_id, entry]));
 
   useEffect(() => {
     if (!hasToken) {
@@ -85,7 +96,20 @@ export default function App() {
     fetchWizards()
       .then(setWizards)
       .catch((err: Error) => setError(err.message));
+    fetchAssistState()
+      .then(setAssist)
+      .catch((err: Error) => setError(err.message));
   }, [session]);
+
+  // The offline explanation follows the snapshot, so a re-check re-explains.
+  useEffect(() => {
+    if (!snapshot) {
+      return;
+    }
+    fetchAdvice()
+      .then(setAdvice)
+      .catch((err: Error) => setError(err.message));
+  }, [snapshot]);
 
   const recheck = useCallback(() => {
     setBusy(true);
@@ -210,7 +234,12 @@ export default function App() {
 
           <ul className="space-y-3">
             {snapshot.results.map((result) => (
-              <ResultCard key={result.check_id} result={result} t={t} />
+              <ResultCard
+                key={result.check_id}
+                result={result}
+                advice={adviceFor.get(result.check_id)}
+                t={t}
+              />
             ))}
           </ul>
 
@@ -230,6 +259,7 @@ export default function App() {
             </section>
           )}
 
+          <Assistant state={assist} t={t} onError={setError} />
           <WizardList wizards={wizards} t={t} onError={setError} />
           <RepairList fixes={fixes} t={t} onError={setError} />
 

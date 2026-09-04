@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/explain"
 	"github.com/ZanOzair/SupportOne/internal/i18n"
 )
 
@@ -37,6 +38,13 @@ type Options struct {
 
 	// AuditPath tells the reader where the record of this run lives.
 	AuditPath string
+
+	// Advice is the offline explanation of each finding, keyed by check ID.
+	// A report without it still renders every verdict; with it, the reader
+	// gets the same plain-language cause and next steps the interface shows,
+	// which is what makes a saved report useful to someone away from the
+	// machine.
+	Advice map[string]explain.Advice
 }
 
 // severityOrder puts the results that matter first. Within a severity the
@@ -79,6 +87,11 @@ type result struct {
 	Error    string
 	Fields   []field
 	Evidence string
+
+	// Cause and Steps are the offline explanation, already rendered into the
+	// reader's language.
+	Cause string
+	Steps []string
 }
 
 type field struct {
@@ -143,7 +156,7 @@ func buildPage(snap checks.Snapshot, opts Options) page {
 
 	for _, res := range ordered {
 		fields, evidence := describeDetail(res.Detail)
-		p.Results = append(p.Results, result{
+		row := result{
 			ID:       res.CheckID,
 			Severity: string(res.Severity),
 			Label:    b.T("severity." + string(res.Severity)),
@@ -151,7 +164,15 @@ func buildPage(snap checks.Snapshot, opts Options) page {
 			Error:    res.Err,
 			Fields:   fields,
 			Evidence: evidence,
-		})
+		}
+
+		if advice, ok := opts.Advice[res.CheckID]; ok {
+			row.Cause = b.T(advice.Cause)
+			for _, step := range advice.Steps {
+				row.Steps = append(row.Steps, b.T(step))
+			}
+		}
+		p.Results = append(p.Results, row)
 	}
 	return p
 }
@@ -199,6 +220,7 @@ func reportStrings(b *i18n.Bundle) map[string]string {
 		"report.agent", "report.unsigned", "report.summary", "report.no_findings",
 		"report.evidence", "report.skipped", "report.skipped_note", "report.audit",
 		"report.about", "report.about_body", "report.redacted", "report.checked",
+		"report.what_this_means", "report.what_to_do",
 	}
 	out := make(map[string]string, len(keys))
 	for _, key := range keys {

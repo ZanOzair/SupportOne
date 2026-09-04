@@ -339,3 +339,23 @@ func ids(advice []Advice) []string {
 	}
 	return out
 }
+
+// TestTheInterfaceLabelsAreTranslated covers the fixed strings the advice
+// block and the terminal use around the explanations themselves.
+func TestTheInterfaceLabelsAreTranslated(t *testing.T) {
+	bundle, err := i18n.Load(i18n.Base)
+	if err != nil {
+		t.Fatalf("load catalog: %v", err)
+	}
+
+	labels := []string{
+		"ui.advice.what_to_do", "ui.advice.walk_me_through", "ui.advice.repair_available",
+		"agent.advice.fix_available", "agent.advice.wizard_available",
+		"report.what_this_means", "report.what_to_do",
+	}
+	for _, key := range labels {
+		if got := bundle.T(key); got == key {
+			t.Errorf("label %q has no translation", key)
+		}
+	}
+}

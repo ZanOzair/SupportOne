@@ -170,3 +170,39 @@ export interface WizardSession {
   session_id: string;
   progress: WizardProgress;
 }
+
+/** What SupportOne says about one finding, from the table built into the binary. */
+export interface Advice {
+  check_id: string;
+  severity: Severity;
+  cause: string;
+  steps?: string[];
+  fixes?: string[];
+  wizards?: string[];
+  escalate: boolean;
+}
+
+/** Whether the optional second tier is switched on at all. */
+export interface AssistState {
+  enabled: boolean;
+  endpoint?: string;
+  pending: number;
+}
+
+/** Exactly what would leave this computer, and nothing that is not in it will. */
+export interface AssistPayload {
+  endpoint: string;
+  model: string;
+  host: string;
+  body: string;
+  bytes: number;
+  redacted: boolean;
+  token: string;
+}
+
+export interface AssistAnswer {
+  notes: string;
+  fixes?: string[];
+  discarded: number;
+  model?: string;
+}

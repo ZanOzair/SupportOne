@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { CheckResult, Severity } from './types';
+import { AdviceBlock } from './advice';
+import type { Advice, CheckResult, Severity } from './types';
 import type { Translate } from './i18n';
 
 /**
@@ -43,7 +44,19 @@ export function SummaryCounts({ results, t }: { results: CheckResult[]; t: Trans
   );
 }
 
-export function ResultCard({ result, t }: { result: CheckResult; t: Translate }) {
+export function ResultCard({
+  result,
+  advice,
+  t,
+  onFix,
+  onWizard,
+}: {
+  result: CheckResult;
+  advice?: Advice;
+  t: Translate;
+  onFix?: (id: string) => void;
+  onWizard?: (id: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const hasDetail = result.detail !== undefined && Object.keys(result.detail).length > 0;
 
@@ -60,6 +73,8 @@ export function ResultCard({ result, t }: { result: CheckResult; t: Translate })
       {result.error && (
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{result.error}</p>
       )}
+
+      {advice && <AdviceBlock advice={advice} t={t} onFix={onFix} onWizard={onWizard} />}
 
       {hasDetail && (
         <div className="mt-3">

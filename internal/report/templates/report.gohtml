@@ -82,6 +82,10 @@ someone who cannot distinguish the colours or is printing in black and white.
   .result-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
   .check-id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; color: var(--muted); }
   .summary { margin: .5rem 0 0; }
+  .cause { margin: .6rem 0 0; }
+  .steps-label { margin: .6rem 0 .2rem; }
+  .steps { margin: 0; padding-left: 1.2rem; }
+  .steps li { margin: .15rem 0; }
   table { border-collapse: collapse; width: 100%; margin-top: .75rem; font-size: .9rem; }
   th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
   th { width: 12rem; font-weight: 600; color: var(--muted); }
@@ -130,6 +134,13 @@ someone who cannot distinguish the colours or is printing in black and white.
     </div>
     <p class="summary">{{ .Summary }}</p>
     {{ if .Error }}<p class="muted">{{ .Error }}</p>{{ end }}
+    {{ if .Cause }}
+    <p class="cause"><strong>{{ $.Strings.report_what_this_means }}</strong> {{ .Cause }}</p>
+    {{ end }}
+    {{ if .Steps }}
+    <p class="steps-label"><strong>{{ $.Strings.report_what_to_do }}</strong></p>
+    <ul class="steps">{{ range .Steps }}<li>{{ . }}</li>{{ end }}</ul>
+    {{ end }}
     {{ if or .Fields .Evidence }}
     <details>
       <summary>{{ $.Strings.report_evidence }}</summary>

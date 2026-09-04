@@ -10,11 +10,26 @@ import (
 	"time"
 
 	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/explain"
 	"github.com/ZanOzair/SupportOne/internal/i18n"
 	"github.com/ZanOzair/SupportOne/internal/platform"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files from the current renderer")
+
+// fixtureAdvice is the offline explanation for the fixture snapshot, so the
+// golden file covers the advice block rather than only the verdicts.
+func fixtureAdvice() map[string]explain.Advice {
+	e := explain.New(nil, nil, platform.Windows)
+
+	out := make(map[string]explain.Advice)
+	for _, res := range fixtureSnapshot().Results {
+		if advice, ok := e.For(res); ok {
+			out[res.CheckID] = advice
+		}
+	}
+	return out
+}
 
 func fixtureSnapshot() checks.Snapshot {
 	generated := time.Date(2026, 9, 2, 13, 20, 0, 0, time.UTC)
@@ -69,7 +84,11 @@ func TestHTMLMatchesGoldenFile(t *testing.T) {
 	}
 
 	var got bytes.Buffer
-	opts := Options{Bundle: bundle, AuditPath: "/home/example/.config/SupportOne/audit.log"}
+	opts := Options{
+		Bundle:    bundle,
+		AuditPath: "/home/example/.config/SupportOne/audit.log",
+		Advice:    fixtureAdvice(),
+	}
 	if err := HTML(&got, fixtureSnapshot(), opts); err != nil {
 		t.Fatalf("HTML: %v", err)
 	}
@@ -181,5 +200,73 @@ func TestFilenameIsSortable(t *testing.T) {
 	}
 	if got := Filename(fixtureSnapshot(), ".json"); got != "supportone-2026-09-02-1320.json" {
 		t.Errorf("Filename with a dotted extension = %q", got)
+	}
+}
+
+func TestTheReportCarriesTheOfflineExplanation(t *testing.T) {
+	bundle, err := i18n.Load("en")
+	if err != nil {
+		t.Fatalf("load bundle: %v", err)
+	}
+
+	var out bytes.Buffer
+	if err := HTML(&out, fixtureSnapshot(), Options{Bundle: bundle, Advice: fixtureAdvice()}); err != nil {
+		t.Fatalf("HTML: %v", err)
+	}
+	rendered := out.String()
+
+	// A saved report is read away from the machine, so the advice has to
+	// travel with it rather than living only in the interface.
+	for _, want := range []string{"What this means:", "What to do:", "Copy anything you would hate to lose"} {
+		if !strings.Contains(rendered, want) {
+			t.Errorf("the report is missing %q", want)
+		}
+	}
+}
+
+func TestAReportWithoutAdviceStillRendersEveryVerdict(t *testing.T) {
+	bundle, err := i18n.Load("en")
+	if err != nil {
+		t.Fatalf("load bundle: %v", err)
+	}
+
+	var out bytes.Buffer
+	if err := HTML(&out, fixtureSnapshot(), Options{Bundle: bundle}); err != nil {
+		t.Fatalf("HTML: %v", err)
+	}
+	rendered := out.String()
+
+	if strings.Contains(rendered, "What this means:") {
+		t.Error("the advice block was rendered with no advice to put in it")
+	}
+	for _, id := range []string{"os.info", "disk.smart", "updates.os"} {
+		if !strings.Contains(rendered, ">"+id+"<") {
+			t.Errorf("%s is missing from a report rendered without advice", id)
+		}
+	}
+}
+
+func TestTheAdviceIsEscapedLikeEverythingElse(t *testing.T) {
+	bundle, err := i18n.Load("en")
+	if err != nil {
+		t.Fatalf("load bundle: %v", err)
+	}
+
+	snap := checks.Snapshot{
+		Schema:  checks.SnapshotSchema,
+		Results: []checks.Result{{CheckID: "os.info", Severity: checks.SeverityOK, Summary: "check.os.info.ok"}},
+	}
+	advice := map[string]explain.Advice{
+		"os.info": {CheckID: "os.info", Cause: "<img src=x onerror=alert(1)>", Steps: []string{"<script>bad()</script>"}},
+	}
+
+	var out bytes.Buffer
+	if err := HTML(&out, snap, Options{Bundle: bundle, Advice: advice}); err != nil {
+		t.Fatalf("HTML: %v", err)
+	}
+	rendered := out.String()
+
+	if strings.Contains(rendered, "<img src=x") || strings.Contains(rendered, "<script>bad()") {
+		t.Error("advice was rendered as markup rather than escaped")
 	}
 }

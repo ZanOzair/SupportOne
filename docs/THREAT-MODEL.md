@@ -56,14 +56,22 @@ Residual risks, none of them eliminated:
 - On Linux no system restore point exists. The user is told, and the decision to proceed without one is theirs and is recorded.
 - A confirmation is only as meaningful as the interface presenting it. The gate can prove the change list was reproduced; it cannot prove a human read it.
 
-### AI assistant *(Phase 3)*
+### AI assistant
 
 The model is untrusted input, not a control path.
 
-- Tier 1 is a deterministic rule engine: offline, no network, no model. It is the default and it alone must make the product useful.
-- Tier 2 is off by default, uses the user's own key or local endpoint, and is opt-in after showing exactly what would be sent, redacted.
-- The model cannot execute anything. It may only return fix IDs, which are validated against the registry before anything is offered. An unknown ID is discarded silently at the boundary.
+- Tier 1 is a deterministic table compiled into the binary: offline, no network, no model, no key. It is the default and it alone makes the product useful. A guard test fails the build if any check verdict has no explanation.
+- Tier 2 is off. It contacts nothing unless a person enabled it, supplied an endpoint, saw the exact bytes that would leave the machine, and confirmed that specific send. Prepare builds the payload and contacts nobody; Ask will not send without the token Prepare issued, and a token is good for one send.
+- The model cannot execute anything. It may only return fix IDs, which are resolved against the registry before anything is offered. An unknown ID, a shell string, or a repair that does not run on this platform is discarded at the boundary.
+- Its prose is contained rather than trusted: control characters stripped, length capped on a rune boundary, and displayed as the model's words beside the Tier-1 explanation rather than in place of it.
 - Prompt injection via a machine's own data (a malicious filename, a crafted event log entry) is assumed possible. It is contained by the same rule: the worst a manipulated model can do is name a fix ID, and the whitelist decides whether that ID is real.
+- No credential is stored. The key is read from `SUPPORTONE_ASSIST_KEY` for the life of the process and never written to a config file, the OS keychain, or the audit log. A tool that keeps your API key becomes a place it can leak from.
+
+Residual risks:
+
+- A send is irreversible. Once the payload reaches the endpoint, what the operator of that endpoint does with it is outside this tool's control. That is why it is off, why the bytes are shown rather than summarised, and why the terminal path redacts fully without asking.
+- Redaction removes what it is told to remove — hostnames, usernames and home paths, serial numbers, network addresses. A check's evidence could still carry something identifying that none of those categories names, and the preview is the defence: the user reads the actual payload, not a description of it.
+- Tier 1's advice is a fixed table written by the authors. It can be wrong for an unusual machine, and it does not learn. It is auditable and identical for everyone, which is the trade being made.
 
 ### Data leaving the machine
 

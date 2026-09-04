@@ -77,6 +77,10 @@
   .result-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
   .check-id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; color: var(--muted); }
   .summary { margin: .5rem 0 0; }
+  .cause { margin: .6rem 0 0; }
+  .steps-label { margin: .6rem 0 .2rem; }
+  .steps { margin: 0; padding-left: 1.2rem; }
+  .steps li { margin: .15rem 0; }
   table { border-collapse: collapse; width: 100%; margin-top: .75rem; font-size: .9rem; }
   th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
   th { width: 12rem; font-weight: 600; color: var(--muted); }
@@ -132,6 +136,13 @@
     <p class="summary">The drive Seagate ST2000 has 142 bad spots it has had to stop using. It still works, but this is how a disk begins to fail: back up your files and keep an eye on it.</p>
     
     
+    <p class="cause"><strong>What this means:</strong> The drive has found areas it can no longer use and has moved the data elsewhere. A few is normal ageing; a growing number is the drive wearing out.</p>
+    
+    
+    <p class="steps-label"><strong>What to do:</strong></p>
+    <ul class="steps"><li>Copy anything you would hate to lose to another drive or a cloud folder. Do this before anything else on this list.</li><li>Check this again in a week. A count that stays put is ageing; a count that climbs is a drive on its way out.</li></ul>
+    
+    
     <details>
       <summary>Show the evidence</summary>
       
@@ -156,6 +167,13 @@
     <p class="summary">Updates were last installed 97 days ago, so security fixes released since then are missing.</p>
     
     
+    <p class="cause"><strong>What this means:</strong> It has been a while since this computer applied an update. Security fixes arrive this way.</p>
+    
+    
+    <p class="steps-label"><strong>What to do:</strong></p>
+    <ul class="steps"><li>Install the waiting updates.</li><li>Restart the computer. Some of this only takes effect after a restart, and a restart clears a great deal on its own.</li></ul>
+    
+    
     <details>
       <summary>Show the evidence</summary>
       
@@ -178,6 +196,13 @@
     <p class="summary">This check could not finish, so there is no answer to report.</p>
     <p class="muted">the System log could not be read</p>
     
+    <p class="cause"><strong>What this means:</strong> This check ran into something it could not read, so it has no answer to give. That is not the same as finding nothing wrong.</p>
+    
+    
+    <p class="steps-label"><strong>What to do:</strong></p>
+    <ul class="steps"><li>Check again. If it still cannot answer, the reason above is what to pass on.</li></ul>
+    
+    
   </section>
   
   <section class="card">
@@ -186,6 +211,13 @@
       <span class="check-id">os.info</span>
     </div>
     <p class="summary">Running Microsoft Windows 11 Pro 10.0.22631. It has been on for 2d 4h.</p>
+    
+    
+    <p class="cause"><strong>What this means:</strong> This is what the computer is running. It is here so a technician does not have to ask.</p>
+    
+    
+    <p class="steps-label"><strong>What to do:</strong></p>
+    <ul class="steps"><li>Nothing to do.</li></ul>
     
     
     <details>

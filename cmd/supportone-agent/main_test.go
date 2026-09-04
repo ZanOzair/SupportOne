@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -312,4 +315,189 @@ func emptyTempDir(t *testing.T) {
 	for _, key := range []string{"TMPDIR", "TMP", "TEMP"} {
 		t.Setenv(key, dir)
 	}
+}
+
+func TestTheTextReportExplainsEveryFinding(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	args := []string{"--text", "--lang", "en", "--audit-log", filepath.Join(t.TempDir(), "audit.log")}
+	if err := run(args, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	out := stdout.String()
+	// Whatever this machine reports, every verdict it prints carries an
+	// explanation beneath it — that is the phase's whole point.
+	if !strings.Contains(out, "os.info") {
+		t.Fatalf("the report has no findings at all:\n%s", out)
+	}
+	if !strings.Contains(out, "This is what the computer is running") {
+		t.Errorf("the report carries no explanation:\n%s", out)
+	}
+}
+
+func TestExplanationsCanBeTurnedOff(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	args := []string{"--text", "--no-explain", "--lang", "en", "--audit-log", filepath.Join(t.TempDir(), "audit.log")}
+	if err := run(args, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "os.info") {
+		t.Fatalf("the report has no findings at all:\n%s", out)
+	}
+	if strings.Contains(out, "This is what the computer is running") {
+		t.Errorf("--no-explain still printed the explanation:\n%s", out)
+	}
+}
+
+// TestTheAssistantNeedsAnEndpointAndAcceptsNoDefault is the first line of the
+// egress gate: there is no endpoint to fall back to.
+func TestTheAssistantNeedsAnEndpointAndAcceptsNoDefault(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	if err := run([]string{"--text", "--assist"}, strings.NewReader(""), &stdout, &stderr); err == nil {
+		t.Error("--assist was accepted with no endpoint")
+	}
+}
+
+func TestTheAssistantRefusesAnEndpointThatWouldSendInTheClear(t *testing.T) {
+	refused := []string{
+		"http://api.example.com/v1/chat/completions",
+		"ftp://example.com/",
+		"not a url at all",
+	}
+
+	for _, endpoint := range refused {
+		var stdout, stderr bytes.Buffer
+		args := []string{"--text", "--assist", "--assist-endpoint", endpoint}
+
+		if err := run(args, strings.NewReader(""), &stdout, &stderr); err == nil {
+			t.Errorf("--assist-endpoint %q was accepted", endpoint)
+		}
+	}
+}
+
+func TestTheAssistantShowsThePayloadAndSendsNothingWithoutSend(t *testing.T) {
+	var reached int
+	endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		reached++
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"{}"}}]}`))
+	}))
+	defer endpoint.Close()
+
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--text", "--assist",
+		"--assist-endpoint", endpoint.URL,
+		"--assist-model", "stub",
+		"--lang", "en",
+		"--audit-log", filepath.Join(t.TempDir(), "audit.log"),
+	}
+
+	// An empty line at the prompt. Silence is not consent here either.
+	if err := run(args, strings.NewReader("\n"), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "This is exactly what would be sent:") {
+		t.Errorf("the payload was not shown:\n%s", out)
+	}
+	if !strings.Contains(out, "Nothing was sent.") {
+		t.Errorf("the refusal was not reported:\n%s", out)
+	}
+	if reached != 0 {
+		t.Errorf("the endpoint was contacted %d times without a confirmation", reached)
+	}
+}
+
+func TestTypingSendSendsExactlyWhatWasShown(t *testing.T) {
+	var received string
+	endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+		received = string(body)
+		_, _ = w.Write([]byte(`{"model":"stub","choices":[{"message":{"content":"{\"notes\":\"Looks fine to me.\",\"fix_ids\":[\"temp.clear\",\"format.disk\"]}"}}]}`))
+	}))
+	defer endpoint.Close()
+
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--text", "--assist",
+		"--assist-endpoint", endpoint.URL,
+		"--assist-model", "stub",
+		"--lang", "en",
+		"--audit-log", filepath.Join(t.TempDir(), "audit.log"),
+	}
+
+	if err := run(args, strings.NewReader("send\n"), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	out := stdout.String()
+	if received == "" {
+		t.Fatal("nothing was sent after the send was confirmed")
+	}
+	// The terminal path always redacts, and what went out proves it.
+	if strings.Contains(received, redactableHostname(t)) {
+		t.Error("the sent payload carries this machine's hostname")
+	}
+	// The model's words are marked as the model's words.
+	if !strings.Contains(out, "These are its words, not SupportOne's") {
+		t.Errorf("the answer was not attributed to the model:\n%s", out)
+	}
+	if !strings.Contains(out, "Looks fine to me.") {
+		t.Errorf("the model's notes were not shown:\n%s", out)
+	}
+	// The invented ID did not survive the registry, and the count says so.
+	if !strings.Contains(out, "--fix temp.clear") {
+		t.Errorf("the surviving suggestion was not offered:\n%s", out)
+	}
+	if strings.Contains(out, "format.disk") {
+		t.Errorf("an ID this build does not carry reached the user:\n%s", out)
+	}
+	if !strings.Contains(out, "named 1 things this build does not carry") {
+		t.Errorf("the discarded suggestion was not reported:\n%s", out)
+	}
+}
+
+func TestNothingReachesTheNetworkWithoutAssist(t *testing.T) {
+	var reached int
+	endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		reached++
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer endpoint.Close()
+
+	// The endpoint is named but --assist is not given, so nothing is offered
+	// and nothing is contacted.
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--text", "--assist-endpoint", endpoint.URL,
+		"--lang", "en", "--audit-log", filepath.Join(t.TempDir(), "audit.log"),
+	}
+	if err := run(args, strings.NewReader("send\n"), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	if reached != 0 {
+		t.Errorf("the endpoint was contacted %d times without --assist", reached)
+	}
+	if strings.Contains(stdout.String(), "This is exactly what would be sent:") {
+		t.Error("a send was offered without --assist")
+	}
+}
+
+// redactableHostname returns this machine's hostname, which full redaction
+// must remove from anything that leaves.
+func redactableHostname(t *testing.T) string {
+	t.Helper()
+
+	name, err := os.Hostname()
+	if err != nil || name == "" {
+		t.Skip("this machine reports no hostname, so there is nothing to assert was removed")
+	}
+	return name
 }
