@@ -145,6 +145,15 @@ var rules = map[string]rule{
 	"check.updates.os.very_stale": {Steps: []string{stepInstallUpdates, stepRestart}, Escalate: true},
 	"check.updates.os.unknown":    {Steps: []string{stepCheckAgain}},
 
+	// The record of what has actually been applied. This is inventory for a
+	// report, not a second opinion on whether the machine is behind — that
+	// is updates.os's question, and answering it twice would let the two
+	// disagree in the same document.
+	"check.updates.installed.recent":     {Steps: []string{stepNothing}},
+	"check.updates.installed.old":        {Steps: []string{stepInstallUpdates, stepRestart}},
+	"check.updates.installed.none":       {Steps: []string{stepInstallUpdates}},
+	"check.updates.installed.unreadable": {Steps: []string{stepCheckAgain}},
+
 	// What starts with the machine.
 	"check.startup.items.ok":   {Steps: []string{stepNothing}},
 	"check.startup.items.none": {Steps: []string{stepNothing}},

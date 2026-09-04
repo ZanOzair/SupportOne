@@ -67,6 +67,20 @@ func fixtureSnapshot() checks.Snapshot {
 				Detail:   map[string]any{"days_since_update": 97, "source": "Windows Update install history"},
 			},
 			{
+				CheckID:  "updates.installed",
+				Severity: checks.SeverityOK,
+				Summary:  "check.updates.installed.recent",
+				Args:     []any{2, "Windows servicing record"},
+				Detail: map[string]any{
+					"source":   "Windows servicing record",
+					"recorded": 2,
+					"patches": []map[string]any{
+						{"id": "KB5041585", "title": "Security Update", "applied": "2026-08-14"},
+						{"id": "KB5039895", "title": "Update", "applied": "2026-07-09"},
+					},
+				},
+			},
+			{
 				CheckID:  "eventlog.errors",
 				Severity: checks.SeverityUnknown,
 				Summary:  "check.unknown.failed",

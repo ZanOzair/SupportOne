@@ -21,9 +21,9 @@ The fleet server and remote help are later phases and are **not** in this build.
 
 ## What it checks
 
-Fourteen checks, each read-only, each documented with its thresholds in [docs/CHECKS.md](docs/CHECKS.md):
+Fifteen checks, each read-only, each documented with its thresholds in [docs/CHECKS.md](docs/CHECKS.md):
 
-`os.info` · `hardware.inventory` · `hardware.ram` · `disk.volumes` · `disk.smart` · `drivers.problem` (Windows) · `eventlog.errors` · `network.config` · `updates.os` · `startup.items` · `security.posture` · `battery.health` · `performance.load` · `backup.status`
+`os.info` · `hardware.inventory` · `hardware.ram` · `disk.volumes` · `disk.smart` · `drivers.problem` (Windows) · `eventlog.errors` · `network.config` · `updates.os` · `startup.items` · `security.posture` · `battery.health` · `performance.load` · `backup.status` · `updates.installed`
 
 ## What it can repair
 

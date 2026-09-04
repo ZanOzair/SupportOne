@@ -17,7 +17,7 @@ Three rules hold throughout:
 | Urgent | Risks data or downtime now. |
 | Could not check | No answer was available. Never a stand-in for OK. |
 
-## The fourteen
+## The fifteen
 
 ### `os.info` — Windows, macOS, Linux
 
@@ -204,6 +204,23 @@ Reads `tmutil destinationinfo` and `tmutil latestbackup` on macOS, and `Win32_Sh
 **A negative result is worded as "no backup SupportOne can see", never "you have no backup".** This check looks for the mechanism the operating system itself ships and nothing else. Someone using Backblaze, Veeam, rsync to a NAS, or a phone photo sync has a backup it cannot see, and telling them they are unprotected when they are not is its own kind of harm.
 
 Linux is the sharpest case. Timeshift, Déjà Dup, Borg, restic, rsnapshot and a hand-written rsync cron job are all common, and each records its state somewhere different. Rather than guess at one, the check reports plainly that it did not look — which is *unknown*, not a warning, because it is not a finding about the user's backups at all.
+
+### `updates.installed` — Windows, macOS, Linux
+
+Which patches this machine has actually applied, and when. `updates.os` answers "is this machine behind?"; this answers the question a technician has to put in writing at the end of a month.
+
+Reads `Win32_QuickFixEngineering` on Windows, `softwareupdate --history` on macOS, and every `dpkg.log` still on disk — rotated ones included — or `rpm -qa --last` on Linux. None of those contacts an update server.
+
+| Verdict | When |
+|---|---|
+| Needs attention | The record exists and contains nothing |
+| Needs attention | Nothing applied in the last 30 days |
+| Could not check | No record could be read, or none of its entries carries a date |
+| OK | At least one update applied in the last 30 days |
+
+**Nothing here is ever urgent.** Whether a machine is dangerously behind is `updates.os`'s question. Answering it twice in two different ways would let the two disagree inside one report.
+
+The record's own limits are reported with it. Windows keeps servicing updates but not driver or Store updates; macOS keeps system updates but not App Store apps; a Linux package log is rotated away on a schedule the distribution chose. So the answer is always "what this machine still has a record of", the result names which record was read, and the evidence carries how far back it reaches. The saved report renders the dated list as its own table, capped at the 50 newest while still reporting the full count.
 
 ## Adding a check
 

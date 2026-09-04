@@ -375,5 +375,20 @@
   "ui.assist.suggested": "Daripada pembaikan yang dibawa binaan ini, ia mencadangkan:",
   "ui.assist.discarded": "Ia juga menamakan %s perkara yang tidak dibawa binaan ini. Itu telah dibuang sebelum anda melihatnya.",
   "ui.assist.caveat": "Model boleh salah dengan penuh yakin. Penjelasan di atas bukan daripadanya, dan tiada apa-apa pada komputer ini berubah.",
-  "ui.assist.unnamed_model": "model itu"
+  "ui.assist.unnamed_model": "model itu",
+  "check.updates.installed.recent": "%d kemas kini telah dipasang dalam sebulan lalu, menurut %s.",
+  "check.updates.installed.recent.one": "%d kemas kini telah dipasang dalam sebulan lalu, menurut %s.",
+  "check.updates.installed.old": "Kemas kini terbaharu dalam rekod dipasang %s lalu, menurut %s.",
+  "check.updates.installed.none": "%s wujud tetapi tidak merekodkan sebarang kemas kini yang dipasang.",
+  "check.updates.installed.unreadable": "SupportOne tidak dapat membaca rekod bertarikh tentang kemas kini yang telah dipasang komputer ini.",
+  "explain.updates.installed.recent": "Inilah senarai yang diperlukan juruteknik untuk mencatat apa yang ditampal dan bila. Ia meliputi apa yang diliputi rekod itu sendiri, dan tiada apa-apa di luarnya.",
+  "explain.updates.installed.old": "Tiada apa-apa dipasang buat seketika menurut rekod ini. Sama ada itu penting bergantung pada apa yang diliputi rekod — ia berbaloi dibaca bersama pemeriksaan kemas kini di atas, bukan secara berasingan.",
+  "explain.updates.installed.none": "Mesin menyimpan rekod ini dan ia kosong. Sama ada kemas kini memang tidak pernah dipasang, atau ia tiba melalui saluran yang tidak diliputi rekod ini.",
+  "explain.updates.installed.unreadable": "Rekod sama ada tidak dapat dibaca atau tiada tarikh, jadi tiada sejarah tampalan untuk dimasukkan ke dalam laporan.",
+  "report.patches": "Kemas kini yang dipasang",
+  "report.patches_note": "Apa yang ditunjukkan rekod komputer ini sendiri telah dipasang. Ia meliputi apa yang diliputi rekod itu: kemas kini pemacu, aplikasi gedung apl dan apa-apa yang dipasang di luar pengemas kini sistem mungkin tidak muncul.",
+  "report.patch_id": "Kemas kini",
+  "report.patch_title": "Keterangan",
+  "report.patch_applied": "Dipasang",
+  "report.patch_source": "Dibaca daripada: %s"
 }

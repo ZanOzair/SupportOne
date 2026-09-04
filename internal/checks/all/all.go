@@ -10,6 +10,7 @@ import (
 	_ "github.com/ZanOzair/SupportOne/internal/checks/drivers"
 	_ "github.com/ZanOzair/SupportOne/internal/checks/events"
 	_ "github.com/ZanOzair/SupportOne/internal/checks/network"
+	_ "github.com/ZanOzair/SupportOne/internal/checks/patches"
 	_ "github.com/ZanOzair/SupportOne/internal/checks/performance"
 	_ "github.com/ZanOzair/SupportOne/internal/checks/security"
 	_ "github.com/ZanOzair/SupportOne/internal/checks/startup"

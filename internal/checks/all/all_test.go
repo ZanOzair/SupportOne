@@ -25,6 +25,7 @@ var wantIDs = []string{
 	"performance.load",
 	"security.posture",
 	"startup.items",
+	"updates.installed",
 	"updates.os",
 }
 
@@ -117,6 +118,10 @@ var messageKeys = []string{
 
 	"check.updates.os.ok", "check.updates.os.pending", "check.updates.os.pending.one", "check.updates.os.stale",
 	"check.updates.os.very_stale", "check.updates.os.unknown",
+
+	"check.updates.installed.recent", "check.updates.installed.recent.one",
+	"check.updates.installed.old", "check.updates.installed.none",
+	"check.updates.installed.unreadable",
 
 	"check.security.posture.ok", "check.security.posture.no_encryption",
 	"check.security.posture.no_firewall", "check.security.posture.no_antivirus",

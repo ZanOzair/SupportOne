@@ -57,6 +57,13 @@ var severityOrder = map[checks.Severity]int{
 	checks.SeverityOK:        3,
 }
 
+// patchRow is one applied update as the report lists it.
+type patchRow struct {
+	ID      string
+	Title   string
+	Applied string
+}
+
 type page struct {
 	Title      string
 	Generated  string
@@ -71,6 +78,14 @@ type page struct {
 	Skipped    []string
 	Strings    map[string]string
 	NoFindings bool
+
+	// Patches is what the machine records having applied. It is rendered as
+	// its own dated table rather than buried in one check's evidence,
+	// because a monthly patch statement is a thing a technician is asked for
+	// on its own.
+	Patches       []patchRow
+	PatchSource   string
+	PatchesCapped bool
 }
 
 type count struct {
@@ -174,7 +189,62 @@ func buildPage(snap checks.Snapshot, opts Options) page {
 		}
 		p.Results = append(p.Results, row)
 	}
+
+	p.Patches, p.PatchSource, p.PatchesCapped = patchTable(snap, b)
 	return p
+}
+
+// patchTable pulls the applied-update list out of the patch check's evidence.
+//
+// It reads the same detail the JSON report carries rather than re-collecting
+// anything, so the table and the check can never disagree, and a snapshot the
+// user redacted stays redacted here too.
+func patchTable(snap checks.Snapshot, b *i18n.Bundle) (rows []patchRow, source string, capped bool) {
+	for _, res := range snap.Results {
+		if res.CheckID != "updates.installed" {
+			continue
+		}
+
+		if named, ok := res.Detail["source"].(string); ok {
+			source = b.T("report.patch_source", named)
+		}
+		recorded, _ := res.Detail["recorded"].(float64)
+
+		entries, ok := res.Detail["patches"].([]any)
+		if !ok {
+			// The snapshot came from JSON, where the list is []any, or from a
+			// live run, where it is the typed slice. Handle both rather than
+			// silently rendering nothing.
+			if typed, isTyped := res.Detail["patches"].([]map[string]any); isTyped {
+				entries = make([]any, 0, len(typed))
+				for _, e := range typed {
+					entries = append(entries, e)
+				}
+			}
+		}
+
+		for _, entry := range entries {
+			fields, ok := entry.(map[string]any)
+			if !ok {
+				continue
+			}
+			rows = append(rows, patchRow{
+				ID:      text(fields["id"]),
+				Title:   text(fields["title"]),
+				Applied: text(fields["applied"]),
+			})
+		}
+
+		capped = int(recorded) > len(rows)
+		return rows, source, capped
+	}
+	return nil, "", false
+}
+
+// text renders an evidence field that may be absent.
+func text(value any) string {
+	s, _ := value.(string)
+	return s
 }
 
 // describeDetail splits a check's evidence into scalar fields, which read well
@@ -221,6 +291,8 @@ func reportStrings(b *i18n.Bundle) map[string]string {
 		"report.evidence", "report.skipped", "report.skipped_note", "report.audit",
 		"report.about", "report.about_body", "report.redacted", "report.checked",
 		"report.what_this_means", "report.what_to_do",
+		"report.patches", "report.patches_note",
+		"report.patch_id", "report.patch_title", "report.patch_applied",
 	}
 	out := make(map[string]string, len(keys))
 	for _, key := range keys {

@@ -375,5 +375,20 @@
   "ui.assist.suggested": "Of the repairs this build carries, it suggested:",
   "ui.assist.discarded": "It also named %s things this build does not carry. Those were discarded before you saw them.",
   "ui.assist.caveat": "A model can be confidently wrong. The explanations above do not come from it, and nothing on this computer has changed.",
-  "ui.assist.unnamed_model": "the model"
+  "ui.assist.unnamed_model": "the model",
+  "check.updates.installed.recent": "%d updates have been applied in the last month, according to the %s.",
+  "check.updates.installed.recent.one": "%d update has been applied in the last month, according to the %s.",
+  "check.updates.installed.old": "The most recent update on record went on %s ago, according to the %s.",
+  "check.updates.installed.none": "The %s exists but records no updates having been applied.",
+  "check.updates.installed.unreadable": "SupportOne could not read a dated record of which updates this computer has applied.",
+  "explain.updates.installed.recent": "This is the list a technician needs to write down what was patched and when. It covers what the record itself covers, and nothing beyond it.",
+  "explain.updates.installed.old": "Nothing has been applied for a while on this record. Whether that matters depends on what the record covers — it is worth reading alongside the update check above rather than on its own.",
+  "explain.updates.installed.none": "The machine keeps this record and there is nothing in it. Either updates have genuinely never been applied, or they arrive through a channel this record does not cover.",
+  "explain.updates.installed.unreadable": "The record either could not be read or carries no dates, so there is no patch history to put in a report.",
+  "report.patches": "Updates applied",
+  "report.patches_note": "What this computer's own record shows it has applied. It covers what that record covers: driver updates, app store applications and anything installed outside the system's own updater may not appear.",
+  "report.patch_id": "Update",
+  "report.patch_title": "Description",
+  "report.patch_applied": "Applied",
+  "report.patch_source": "Read from: %s"
 }

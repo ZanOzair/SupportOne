@@ -121,7 +121,7 @@
     
     <li><span class="value">1</span> <span class="chip unknown">Could not check</span></li>
     
-    <li><span class="value">1</span> <span class="chip ok">OK</span></li>
+    <li><span class="value">2</span> <span class="chip ok">OK</span></li>
     
   </ul>
   
@@ -233,6 +233,66 @@
     </details>
     
   </section>
+  
+  <section class="card">
+    <div class="result-head">
+      <span class="chip ok">OK</span>
+      <span class="check-id">updates.installed</span>
+    </div>
+    <p class="summary">2 updates have been applied in the last month, according to the Windows servicing record.</p>
+    
+    
+    <p class="cause"><strong>What this means:</strong> This is the list a technician needs to write down what was patched and when. It covers what the record itself covers, and nothing beyond it.</p>
+    
+    
+    <p class="steps-label"><strong>What to do:</strong></p>
+    <ul class="steps"><li>Nothing to do.</li></ul>
+    
+    
+    <details>
+      <summary>Show the evidence</summary>
+      
+      <table>
+        <tbody>
+        <tr><th scope="row">recorded</th><td>2</td></tr><tr><th scope="row">source</th><td>Windows servicing record</td></tr>
+        </tbody>
+      </table>
+      
+      <pre>{
+  &#34;patches&#34;: [
+    {
+      &#34;applied&#34;: &#34;2026-08-14&#34;,
+      &#34;id&#34;: &#34;KB5041585&#34;,
+      &#34;title&#34;: &#34;Security Update&#34;
+    },
+    {
+      &#34;applied&#34;: &#34;2026-07-09&#34;,
+      &#34;id&#34;: &#34;KB5039895&#34;,
+      &#34;title&#34;: &#34;Update&#34;
+    }
+  ]
+}</pre>
+    </details>
+    
+  </section>
+  
+
+  
+  <h2>Updates applied</h2>
+  <p class="muted">What this computer&#39;s own record shows it has applied. It covers what that record covers: driver updates, app store applications and anything installed outside the system&#39;s own updater may not appear.</p>
+  <p class="muted">Read from: Windows servicing record</p>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Update</th>
+        <th scope="col">Description</th>
+        <th scope="col">Applied</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="check-id">KB5041585</td><td>Security Update</td><td>2026-08-14</td></tr><tr><td class="check-id">KB5039895</td><td>Update</td><td>2026-07-09</td></tr>
+    </tbody>
+  </table>
   
 
   

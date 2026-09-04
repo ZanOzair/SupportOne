@@ -157,6 +157,24 @@ someone who cannot distinguish the colours or is printing in black and white.
   </section>
   {{ end }}
 
+  {{ if .Patches }}
+  <h2>{{ .Strings.report_patches }}</h2>
+  <p class="muted">{{ .Strings.report_patches_note }}</p>
+  {{ if .PatchSource }}<p class="muted">{{ .PatchSource }}</p>{{ end }}
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{{ .Strings.report_patch_id }}</th>
+        <th scope="col">{{ .Strings.report_patch_title }}</th>
+        <th scope="col">{{ .Strings.report_patch_applied }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Patches }}<tr><td class="check-id">{{ .ID }}</td><td>{{ .Title }}</td><td>{{ .Applied }}</td></tr>{{ end }}
+    </tbody>
+  </table>
+  {{ end }}
+
   {{ if .Skipped }}
   <h2>{{ .Strings.report_skipped }}</h2>
   <p class="muted">{{ .Strings.report_skipped_note }}</p>
