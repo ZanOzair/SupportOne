@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"io"
@@ -500,4 +501,115 @@ func redactableHostname(t *testing.T) string {
 		t.Skip("this machine reports no hostname, so there is nothing to assert was removed")
 	}
 	return name
+}
+
+func TestTheTicketBundleIsWrittenAndSentNowhere(t *testing.T) {
+	dir := t.TempDir()
+	out := filepath.Join(dir, "bundle.zip")
+
+	shot := filepath.Join(dir, "screenshot.png")
+	if err := os.WriteFile(shot, []byte("\x89PNG\r\n\x1a\nsome image bytes here"), 0o600); err != nil {
+		t.Fatalf("write image: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--ticket", out,
+		"--describe", "The printer stopped working after lunch.",
+		"--attach", shot,
+		"--lang", "en",
+		"--audit-log", filepath.Join(dir, "audit.log"),
+	}
+	if err := run(args, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	if !strings.Contains(stdout.String(), "sent nowhere") {
+		t.Errorf("the output does not say the bundle went nowhere:\n%s", stdout.String())
+	}
+
+	archive, err := zip.OpenReader(out)
+	if err != nil {
+		t.Fatalf("open bundle: %v", err)
+	}
+	defer archive.Close()
+
+	names := make(map[string]bool)
+	for _, f := range archive.File {
+		names[f.Name] = true
+	}
+	for _, want := range []string{"ticket.json", "report.html", "attachments/screenshot.png"} {
+		if !names[want] {
+			t.Errorf("the bundle has no %s", want)
+		}
+	}
+}
+
+func TestTheTicketBundleIsRedacted(t *testing.T) {
+	dir := t.TempDir()
+	out := filepath.Join(dir, "bundle.zip")
+
+	var stdout, stderr bytes.Buffer
+	args := []string{"--ticket", out, "--lang", "en", "--audit-log", filepath.Join(dir, "audit.log")}
+	if err := run(args, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	raw, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("read bundle: %v", err)
+	}
+	// A bundle is built to be handed to someone else, so the terminal path
+	// redacts fully rather than asking field by field.
+	if hostname, err := os.Hostname(); err == nil && hostname != "" {
+		if bytes.Contains(raw, []byte(hostname)) {
+			t.Error("the bundle carries this machine's hostname")
+		}
+	}
+}
+
+func TestTheBundleCanBeWrittenIntoAFolder(t *testing.T) {
+	dir := t.TempDir()
+
+	var stdout, stderr bytes.Buffer
+	args := []string{"--ticket", dir, "--lang", "en", "--audit-log", filepath.Join(t.TempDir(), "audit.log")}
+	if err := run(args, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read dir: %v", err)
+	}
+	if len(entries) != 1 || !strings.HasPrefix(entries[0].Name(), "supportone-ticket-") {
+		t.Errorf("the folder holds %v, want one named bundle", entries)
+	}
+}
+
+func TestAttachOnlyMeansSomethingWithATicket(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if err := run([]string{"--attach", "shot.png"}, strings.NewReader(""), &stdout, &stderr); err == nil {
+		t.Error("--attach was accepted without --ticket")
+	}
+}
+
+func TestABundleRefusesAnAttachmentThatIsNotAnImage(t *testing.T) {
+	dir := t.TempDir()
+	secret := filepath.Join(dir, "id_rsa")
+	if err := os.WriteFile(secret, []byte("-----BEGIN OPENSSH PRIVATE KEY-----\n"), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--ticket", filepath.Join(dir, "bundle.zip"),
+		"--attach", secret,
+		"--lang", "en",
+		"--audit-log", filepath.Join(dir, "audit.log"),
+	}
+	// A support bundle is not a way to move anything off a machine under a
+	// support label.
+	if err := run(args, strings.NewReader(""), &stdout, &stderr); err == nil {
+		t.Error("a private key was accepted as an attachment")
+	}
 }

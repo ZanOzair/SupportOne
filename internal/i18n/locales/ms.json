@@ -390,5 +390,8 @@
   "report.patch_id": "Kemas kini",
   "report.patch_title": "Keterangan",
   "report.patch_applied": "Dipasang",
-  "report.patch_source": "Dibaca daripada: %s"
+  "report.patch_source": "Dibaca daripada: %s",
+  "agent.ticket.written": "Bungkusan sokongan ditulis ke %s",
+  "agent.ticket.contents": "Ia mengandungi laporan komputer ini, penjelasannya, keterangan anda, dan %d lampiran.",
+  "agent.ticket.not_sent": "Ia disimpan pada komputer ini dan tidak dihantar ke mana-mana. Lampirkan pada e-mel atau serahkan sendiri."
 }

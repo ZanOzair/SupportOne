@@ -54,6 +54,11 @@ type options struct {
 	wizard      string
 	noExplain   bool
 
+	// The support bundle. It is written to disk and sent nowhere.
+	ticket   string
+	describe string
+	attach   string
+
 	// The assistant is off unless every one of these is given. Nothing
 	// reaches the network on a default invocation.
 	assist         bool
@@ -137,6 +142,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	// The terminal modes exist for technicians and scripts. Anyone who just
 	// runs the file gets the interface.
 	switch {
+	case opts.ticket != "":
+		return writeTicket(ctx, stdout, bundle, audit, host, opts)
 	case opts.fix != "":
 		return applyFix(ctx, stdin, stdout, bundle, audit, host, opts)
 	case opts.wizard != "":
@@ -172,6 +179,9 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	fs.StringVar(&opts.fix, "fix", "", "describe one repair and, after you confirm it, apply it")
 	fs.StringVar(&opts.wizard, "wizard", "", "walk through one problem step by step")
 	fs.BoolVar(&opts.noExplain, "no-explain", false, "print verdicts without the plain-language explanation")
+	fs.StringVar(&opts.ticket, "ticket", "", "write a support bundle to this file or folder and exit")
+	fs.StringVar(&opts.describe, "describe", "", "your own description of the problem, to go in the bundle")
+	fs.StringVar(&opts.attach, "attach", "", "image files to include in the bundle, comma separated")
 	fs.BoolVar(&opts.assist, "assist", false, "offer to send the report to the model endpoint configured below")
 	fs.StringVar(&opts.assistEndpoint, "assist-endpoint", "", "an OpenAI-shaped chat completions URL; HTTPS, or http only on this computer")
 	fs.StringVar(&opts.assistModel, "assist-model", "", "the model to ask for at that endpoint")
@@ -189,6 +199,9 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	}
 	if opts.json && opts.text {
 		return options{}, fmt.Errorf("--json and --text ask for two different outputs; choose one")
+	}
+	if opts.attach != "" && opts.ticket == "" {
+		return options{}, fmt.Errorf("--attach only means something with --ticket, which is what an attachment goes into")
 	}
 	if opts.fix != "" && opts.wizard != "" {
 		return options{}, fmt.Errorf("--fix and --wizard ask for two different things; choose one")

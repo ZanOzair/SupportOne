@@ -88,6 +88,9 @@ With no flags it runs the checks and opens its interface in your browser, served
 | `--assist` | Offer to send the report to a model endpoint (off unless given) |
 | `--assist-endpoint` | An OpenAI-shaped chat completions URL; HTTPS, or http only on this computer |
 | `--assist-model` | The model to ask for at that endpoint |
+| `--ticket <path>` | Write a support bundle to a file or folder |
+| `--describe` | Your own description of the problem, to go in the bundle |
+| `--attach` | Image files to include in the bundle, comma separated |
 | `--no-browser` | Print the interface address instead of opening a browser |
 | `--lang` | Language tag, `en` or `ms` (defaults to the system language) |
 | `--dry-run` | Report what would change without changing anything |

@@ -390,5 +390,8 @@
   "report.patch_id": "Update",
   "report.patch_title": "Description",
   "report.patch_applied": "Applied",
-  "report.patch_source": "Read from: %s"
+  "report.patch_source": "Read from: %s",
+  "agent.ticket.written": "Support bundle written to %s",
+  "agent.ticket.contents": "It contains this computer's report, the explanations, your description, and %d attachments.",
+  "agent.ticket.not_sent": "It has been saved to this computer and sent nowhere. Attach it to an email or hand it over yourself."
 }
