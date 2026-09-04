@@ -38,7 +38,7 @@ type Build struct {
 	GoVersion string
 
 	// Modified reports that the source tree had uncommitted changes when this
-	// was built, read from the VCS stamp Go embeds.
+	// was built.
 	Modified bool
 
 	// Released reports whether this looks like a build from the release
@@ -59,12 +59,20 @@ func Current(program, version, commit, date string) Build {
 		GoVersion: runtime.Version(),
 	}
 
+	// Two sources, because neither covers every build. An ordinary `go build`
+	// carries Go's VCS stamp; a release build does not, because the stamp is
+	// read from the working tree as each binary is linked and the release
+	// script writes into that tree as it goes. What a release carries instead
+	// is the version, and `git describe --dirty` puts the answer in it.
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
 			if setting.Key == "vcs.modified" {
 				b.Modified = setting.Value == "true"
 			}
 		}
+	}
+	if strings.HasSuffix(b.Version, "-dirty") {
+		b.Modified = true
 	}
 
 	// A release is stamped with a real version, from a clean tree. Any of

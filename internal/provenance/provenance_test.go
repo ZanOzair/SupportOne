@@ -116,3 +116,32 @@ func contains(haystack []string, needle string) bool {
 	}
 	return false
 }
+
+func TestALocallyBuiltDirtyReleaseStillSaysSo(t *testing.T) {
+	// A release build carries no VCS stamp — the stamp is read from the
+	// working tree as each binary is linked, and the release script writes
+	// into that tree as it goes, so leaving it on made the output depend on
+	// build order. What is left is the version, and `git describe --dirty`
+	// puts the answer there.
+	b := Current("supportone-agent", "v1.2.3-4-gabc1234-dirty", "abc1234", "2026-09-04T10:00:00Z")
+
+	if !b.Modified {
+		t.Error("a -dirty version is not being treated as a modified tree")
+	}
+	if b.Released {
+		t.Error("a build from a modified tree is being reported as a release")
+	}
+	if notes := b.Notes(); len(notes) == 0 || notes[0] != KeyModified {
+		t.Errorf("Notes() = %v, want it to open by saying the tree was modified", notes)
+	}
+}
+
+func TestACleanReleaseVersionIsNotMistakenForADirtyOne(t *testing.T) {
+	b := Current("supportone-agent", "v1.2.3", "abc1234", "2026-09-04T10:00:00Z")
+
+	// Current also reads the test binary's own VCS stamp, which this test
+	// cannot control, so this asserts only what the version contributes.
+	if strings.HasSuffix(b.Version, "-dirty") {
+		t.Fatalf("Version = %q, want a clean one for this case", b.Version)
+	}
+}

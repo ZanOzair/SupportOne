@@ -104,8 +104,15 @@ build_one() {
   # -trimpath removes the building machine's paths from the binary; without it
   # the same source built in two directories produces two different files.
   # CGO off keeps it one static file with no library to be missing later.
+  #
+  # -buildvcs=false because Go's own VCS stamp is read from the working tree at
+  # the moment each binary is linked, and this script writes into that tree as
+  # it goes: the first target would be stamped clean and every one after it
+  # dirty, from one invocation. The commit is stamped explicitly below, from
+  # git, once — so the ambient stamp is redundant here and only ever a way for
+  # the output to depend on when it ran.
   CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" GOTOOLCHAIN=local \
-    go build -trimpath \
+    go build -trimpath -buildvcs=false \
       -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${commit} -X main.buildDate=${build_date}" \
       -o "${stage}/${cmd}${suffix}" "./cmd/${cmd}"
 
