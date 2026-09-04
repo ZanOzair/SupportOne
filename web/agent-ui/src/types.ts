@@ -206,3 +206,42 @@ export interface AssistAnswer {
   discarded: number;
   model?: string;
 }
+
+/** A remote-help program this build knows how to look for. */
+export interface RemoteTool {
+  id: string;
+  name: string;
+  installed: boolean;
+  path?: string;
+}
+
+/** A session as SupportOne understands it: as the user reported it. */
+export interface RemoteSession {
+  id: string;
+  technician: string;
+  tool: string;
+  started: string;
+  ended?: string;
+  launched: boolean;
+}
+
+/**
+ * What a remote session would allow, before anyone is named.
+ *
+ * The consequences arrive with the state rather than after a tool is picked,
+ * so the panel can say what this is before it asks for anything.
+ */
+export interface RemoteState {
+  available: boolean;
+  tools: RemoteTool[];
+  consequences: string[];
+  session: RemoteSession | null;
+}
+
+/** What the user is shown before a session, and must repeat to start one. */
+export interface RemotePlan {
+  technician: string;
+  tool: RemoteTool;
+  consequences: string[];
+  token: string;
+}

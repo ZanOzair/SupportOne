@@ -65,6 +65,20 @@ type options struct {
 	fleetServer string
 	fleetName   string
 
+	// Monthly reports. Both write or print locally and send nothing.
+	monthly     string
+	scheduleDir string
+
+	// The profile this machine is measured against. Reading it changes
+	// nothing: a profile can offer repairs, and offering is where it stops.
+	profile string
+
+	// Remote help. SupportOne implements no remote desktop protocol; these
+	// take the consent and can start a program the machine already has.
+	remote          string
+	remoteTool      string
+	listRemoteTools bool
+
 	// The assistant is off unless every one of these is given. Nothing
 	// reaches the network on a default invocation.
 	assist         bool
@@ -119,12 +133,16 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	defer func() { _ = audit.Close() }()
 
 	switch {
+	case opts.scheduleDir != "":
+		return printSchedule(stdout, bundle, host, opts)
 	case opts.listChecks:
 		return listChecks(stdout, bundle, host)
 	case opts.listFixes:
 		return listFixes(stdout, bundle, host)
 	case opts.listWizards:
 		return listWizards(stdout, bundle, host)
+	case opts.listRemoteTools:
+		return listRemoteTools(stdout, bundle, audit, host)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -148,6 +166,12 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	// The terminal modes exist for technicians and scripts. Anyone who just
 	// runs the file gets the interface.
 	switch {
+	case opts.monthly != "":
+		return writeMonthly(ctx, stdout, bundle, audit, host, opts)
+	case opts.profile != "":
+		return measureProfile(ctx, stdout, bundle, audit, host, opts)
+	case opts.remote != "":
+		return startRemote(ctx, stdin, stdout, bundle, audit, host, opts)
 	case opts.ticket != "":
 		return writeTicket(ctx, stdout, bundle, audit, host, opts)
 	case opts.fix != "":
@@ -196,6 +220,12 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	fs.BoolVar(&opts.report, "report", false, "offer to send this report to the fleet server named below")
 	fs.StringVar(&opts.fleetServer, "fleet-server", "", "the fleet server's address; HTTPS, or http only on this computer")
 	fs.StringVar(&opts.fleetName, "fleet-name", "", "what this machine should be called in that dashboard")
+	fs.StringVar(&opts.monthly, "monthly", "", "write this month's client report into this folder and exit")
+	fs.StringVar(&opts.scheduleDir, "schedule", "", "print the scheduler entry that would write monthly reports into this folder, and exit")
+	fs.StringVar(&opts.profile, "profile", "", "measure this computer against the profile in this file")
+	fs.BoolVar(&opts.listRemoteTools, "list-remote-tools", false, "list the remote-help programs already installed here and exit")
+	fs.StringVar(&opts.remote, "remote", "", "agree to a remote-help session with the person named here")
+	fs.StringVar(&opts.remoteTool, "remote-tool", "", "which installed remote-help program to start; see --list-remote-tools")
 	fs.BoolVar(&opts.assist, "assist", false, "offer to send the report to the model endpoint configured below")
 	fs.StringVar(&opts.assistEndpoint, "assist-endpoint", "", "an OpenAI-shaped chat completions URL; HTTPS, or http only on this computer")
 	fs.StringVar(&opts.assistModel, "assist-model", "", "the model to ask for at that endpoint")
@@ -213,6 +243,12 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	}
 	if opts.json && opts.text {
 		return options{}, fmt.Errorf("--json and --text ask for two different outputs; choose one")
+	}
+	if opts.monthly != "" && opts.scheduleDir != "" {
+		return options{}, fmt.Errorf("--monthly writes a report and --schedule prints how to run it monthly; choose one")
+	}
+	if opts.remoteTool != "" && opts.remote == "" {
+		return options{}, fmt.Errorf("--remote-tool only means something with --remote, which names who is being let in")
 	}
 	if opts.attach != "" && opts.ticket == "" {
 		return options{}, fmt.Errorf("--attach only means something with --ticket, which is what an attachment goes into")
@@ -328,6 +364,7 @@ func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform
 		CheckTimeout: opts.timeout,
 		Explainer:    newExplainer(host),
 		Assistant:    newAssistant(audit, host, opts),
+		Remote:       newRemote(audit, host),
 	})
 	if err != nil {
 		return err

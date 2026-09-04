@@ -49,6 +49,15 @@ func (s *Server) routes() http.Handler {
 	mux.Handle("POST /api/assist/ask", s.api(s.handleAssistAsk))
 	mux.Handle("POST /api/assist/discard", s.api(s.handleAssistDiscard))
 
+	// Remote help wraps a tool the user already has. SupportOne implements no
+	// remote desktop protocol; these routes take the consent and write the
+	// record, and can launch only a program from the compiled-in whitelist.
+	mux.Handle("GET /api/remote", s.api(s.handleRemoteState))
+	mux.Handle("POST /api/remote/plan", s.api(s.handleRemotePlan))
+	mux.Handle("POST /api/remote/start", s.api(s.handleRemoteStart))
+	mux.Handle("POST /api/remote/decline", s.api(s.handleRemoteDecline))
+	mux.Handle("POST /api/remote/end", s.api(s.handleRemoteEnd))
+
 	mux.Handle("GET /api/wizards", s.api(s.handleWizards))
 	mux.Handle("GET /api/wizards/escalation", s.api(s.handleEscalation))
 	mux.Handle("POST /api/wizards/start", s.api(s.handleWizardStart))

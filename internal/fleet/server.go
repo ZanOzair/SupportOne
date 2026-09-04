@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ZanOzair/SupportOne/internal/checks"
@@ -54,11 +55,17 @@ type Config struct {
 
 // Server serves the dashboard and receives reports.
 type Server struct {
-	cfg      Config
-	bundle   *i18n.Bundle
-	explain  *explain.Explainer
+	cfg     Config
+	bundle  *i18n.Bundle
+	explain *explain.Explainer
+	http    *http.Server
+
+	// listener is set by Serve and read by Addr and Close, which callers
+	// reach from other goroutines — a supervisor logging the address, a
+	// signal handler shutting the server down. The mutex is what makes those
+	// two safe to call while Serve is starting.
+	mu       sync.Mutex
 	listener net.Listener
-	http     *http.Server
 }
 
 // New prepares a server. It binds nothing until Serve is called.
@@ -106,8 +113,14 @@ func (s *Server) Serve(ctx context.Context, addr string) error {
 	if err != nil {
 		return fmt.Errorf("fleet: listen on %s: %w", addr, err)
 	}
+	s.mu.Lock()
 	s.listener = listener
+	s.mu.Unlock()
 
+	// #nosec G118 -- ctx is already cancelled by the time this line runs; that
+	// is what woke the goroutine. Deriving the shutdown deadline from it would
+	// hand Shutdown an expired context, which drops in-flight requests instead
+	// of letting them finish. The five seconds is the point of the goroutine.
 	go func() {
 		<-ctx.Done()
 		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -121,17 +134,24 @@ func (s *Server) Serve(ctx context.Context, addr string) error {
 	return nil
 }
 
-// Addr returns what the server is listening on.
+// Addr returns what the server is listening on, or "" before Serve has bound.
 func (s *Server) Addr() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.listener == nil {
 		return ""
 	}
 	return s.listener.Addr().String()
 }
 
-// Close stops the server.
+// Close stops the server. Closing one that never listened does nothing.
 func (s *Server) Close() error {
-	if s.listener == nil {
+	s.mu.Lock()
+	listening := s.listener != nil
+	s.mu.Unlock()
+
+	if !listening {
 		return nil
 	}
 	return s.http.Close()

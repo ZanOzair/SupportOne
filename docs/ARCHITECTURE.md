@@ -25,7 +25,7 @@ The agent works with no network access at all. Nothing in the diagnostic path re
 ```
 cmd/
   supportone-agent/     end-user binary
-  supportone-server/    optional fleet server (Phase 4)
+  supportone-server/    optional fleet server
 internal/
   checks/               diagnostic plugin contract + registry
     all/                the one file that decides which checks are compiled in
@@ -47,6 +47,9 @@ internal/
   enrol/                sending one report to a fleet server, gated the same way
   ticket/               the support bundle: description, snapshot, advice, image
   fleet/                the optional server: store, dashboard, one-way by design
+  schedule/             the monthly report, and the scheduler entry it prints
+  profile/              a technician's written standard, measured against a machine
+  remote/               the consent wrapper in front of a remote-help session
   consent/              the append-only audit log
   localui/              the loopback server that hosts the interface
   redact/               removing identifying detail before anything is saved
@@ -134,6 +137,16 @@ Both follow the same shape: off by default, no default destination, the exact by
 
 `internal/fleet` is the optional, self-hostable side: a store of files rather than rows, and a server-rendered dashboard with no script at all. It receives and nothing else — there is no route that asks a machine anything. [FLEET.md](FLEET.md) has the rules and the residual risks.
 
+## Operations
+
+Three packages serve the running of a fleet rather than the fixing of one machine, and none of them can change anything.
+
+`internal/schedule` renders the month's report into a folder and, separately, produces the scheduler entry that would run it — Task Scheduler, launchd or cron, with its own undo line. It prints that entry and installs nothing: adding a scheduled task is a change to a machine, and every change here goes through the consent gate as a fix with a rollback.
+
+`internal/profile` reads a technician's standard — check, worst tolerated verdict, why, and what to offer — and measures a snapshot against it. A profile is data, and reading it can change nothing: `offer` names repairs to suggest, resolved through the fix registry for the platform first, and applying one still goes through `internal/remediate`. A check that could not answer, or that this build does not carry, counts against the profile rather than being folded into the met column.
+
+`internal/remote` is the consent wrapper for remote help. SupportOne implements no remote desktop protocol: this package detects which of a compiled-in list of tools is already installed, states in plain language what a session allows, takes a single-use confirmation that repeats that list, records the start and the user-reported end, and can launch only a resolved path from that list, with no arguments and no shell. It never installs or configures a tool. Its stated limit is the important part: once a session starts, it can see nothing, and the record says so in those terms. [OPERATIONS.md](OPERATIONS.md) has the rules and the residual risks.
+
 ## The local interface
 
 The agent serves its own interface rather than shipping a GUI toolkit, so the same screens render on every OS and the binary stays a few megabytes.
@@ -165,4 +178,5 @@ It is append-only, created `0600`, and values are escaped so a field can never f
 | 2 | Fixes and guided wizards, restore points, consent flow | Every fix has a passing rollback test — done |
 | 3 | Tier-1 offline explainer, optional Tier-2 LLM, performance and backup analysis | Every check result explained offline, no API key — done |
 | 4 | Patch reporter, screenshot-to-ticket, optional server and dashboard | Compose up, technician sees a real fleet — done |
-| 5 | Remote-help consent wrapper, provisioning, scheduled reports | A monthly client report generates end to end |
+| 5 | Remote-help consent wrapper, provisioning profiles, scheduled reports | A monthly client report generates end to end — done |
+| 6 | Signing, notarization, packaged installers, release automation | A user downloads one file and their OS does not warn them |

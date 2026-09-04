@@ -127,6 +127,28 @@ A ticket carries a description, the redacted snapshot, the offline advice, and a
 - Names are reduced to one safe file name inside `attachments/`, with backslashes treated as separators whatever platform built the bundle, and an attachment cannot take the name of the bundle's own files.
 - Writing a bundle is not sending one. It is saved locally and the output says so.
 
+### Remote-help sessions
+
+SupportOne implements no remote desktop protocol. It wraps a program the machine already has, and the attack surface it adds is the wrapper, not a transport.
+
+- **The whitelist is compiled in.** There is no configuration file, environment variable or API field that adds a program to it. What is launched is the path resolved for an entry in that table, with no arguments and no shell, so there is nothing to inject.
+- **It never installs or configures a tool.** No download, no package-manager invocation, no account, no unattended-access password, no relay server. Downloading and running code at runtime is out of scope for this project, and an installer is that with a friendlier name.
+- **A session needs a specific, present confirmation.** The plan token is single-use, and starting requires the consequence list to be echoed back in the order it was shown. A caller that cannot reproduce the list did not display it. One session may be open at a time.
+- **No credential of any remote-help tool is stored.** SupportOne holds no password, token or key for one, and writes none to disk.
+- **The limit is stated, not implied.** Once a session starts, SupportOne can see nothing: it cannot watch the session, restrict it, log its contents, or end it. The audit log records an agreement and a user-reported end, and says so in those terms. A session left open because the agent was closed stays open in the record rather than being given an invented end time.
+- **The residual risk is social, and it is real.** Somebody who talks a user into typing `allow` gets everything the consequence list describes. This wrapper makes the cost legible at the moment of the decision; it cannot make the decision. That is the honest boundary, and no amount of code moves it.
+
+### Scheduled reports and profiles
+
+Both are technician-facing, and neither can change a machine.
+
+- **The scheduled path only reads.** `--monthly` runs the checks and writes two files. There is no fix, wizard or send in it.
+- **It redacts fully, without asking.** Nobody is present to weigh each field, so the protective answer is taken by default rather than deferred to a prompt nobody will see.
+- **Nothing is scheduled without a person.** `--schedule` prints the platform's entry and the line that removes it again; it installs nothing. A diagnostic tool that silently adds a scheduled task is the pattern this project exists to not be.
+- **A profile is data, read as data.** It can name a check this build does not carry or a repair that does not run here, and both are reported rather than passed over. Unknown fields are a parse error, because a misspelled rule that silently does not apply is worse in a compliance document than a refusal to load.
+- **A profile cannot apply anything.** Its `offer` field names repairs to suggest, resolved against the compiled-in registry for the platform first. Applying one still goes through the fix consent gate. A file that could repair machines on its own would be dynamic code with extra steps.
+- **A check that did not answer counts against the profile.** Treating "could not check" as conformance would certify machines nobody looked at.
+
 ## Non-goals
 
 Naming these honestly is part of the model.
@@ -137,6 +159,9 @@ Naming these honestly is part of the model.
 - **Firmware.** Firmware and BIOS information is read where the OS exposes it. Nothing is ever flashed or modified.
 - **Anti-malware.** SupportOne is not a scanner, does not detect malware, and does not remove it.
 - **Defending the local UI against processes running as the same user.** See above.
+- **Remote desktop.** SupportOne provides no screen capture, no input injection, and no transport of its own, and will not. It wraps tools that do.
+- **Supervising a remote session.** Once one starts, SupportOne is not part of it and cannot observe, restrict or end it. It records the decision, not the session.
+- **Unattended access.** There is no way to configure a session that begins without somebody present agreeing to it. A remote-help path that can be triggered remotely is a backdoor, whoever installs it.
 
 ## Review
 

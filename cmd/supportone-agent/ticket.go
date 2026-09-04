@@ -49,7 +49,11 @@ func writeTicket(ctx context.Context, w io.Writer, bundle *i18n.Bundle, audit *c
 		path = filepath.Join(path, tk.Filename())
 	}
 
-	file, err := os.Create(path) // #nosec G304 -- the path the user asked to write to.
+	// #nosec G304,G703 -- the taint gosec traces is the --ticket value: a path
+	// the person running this typed on their own command line, to write their
+	// own bundle to their own disk. There is no boundary here to traverse, and
+	// refusing a path a user names for their own file would be the bug.
+	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("create %s: %w", path, err)
 	}

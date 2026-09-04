@@ -6,9 +6,9 @@ SupportOne consolidates ten IT-support functions — diagnostics, safe fixes, gu
 
 ## Status
 
-**Phase 4 of 6 — the snapshot, repairs, explanations, and somewhere to send them.** Fifteen read-only checks, a local web interface, HTML and JSON reports, redaction before anything is saved, three fixes and two guided walkthroughs behind a consent gate, a plain-language explanation of every verdict, an optional model you can point at your own endpoint — and now a patch statement, a support bundle you can hand to a technician, and an optional fleet server you can host yourself.
+**Phase 5 of 6 — the snapshot, repairs, explanations, somewhere to send them, and the standards to hold them to.** Fifteen read-only checks, a local web interface, HTML and JSON reports, redaction before anything is saved, three fixes and two guided walkthroughs behind a consent gate, a plain-language explanation of every verdict, an optional model you can point at your own endpoint, a patch statement, a support bundle, an optional fleet server — and now scheduled monthly reports, provisioning profiles, and a consent wrapper in front of remote help.
 
-Remote help, provisioning and scheduled reports are later phases and are **not** in this build. The agent says so rather than implying otherwise.
+**SupportOne implements no remote desktop protocol and will not.** What Phase 5 adds is the sentence before a session and the record after it. Signing, notarization and the packaged installers are Phase 6 and are **not** in this build.
 
 | Phase | Contents | State |
 |---|---|---|
@@ -17,7 +17,8 @@ Remote help, provisioning and scheduled reports are later phases and are **not**
 | 2 | Fixes and guided wizards, restore points, rollback | Complete |
 | 3 | Offline explainer, optional LLM assistant, performance and backup analysis | Complete |
 | 4 | Patch reporter, screenshot-to-ticket, optional fleet server | Complete |
-| 5 | Remote-help consent wrapper, provisioning, scheduled reports | Next |
+| 5 | Remote-help consent wrapper, provisioning profiles, scheduled reports | Complete |
+| 6 | Signing, notarization, packaged installers, release automation | Next |
 
 ## What it checks
 
@@ -48,6 +49,24 @@ An optional second tier can send the report to a model endpoint you choose. It i
 **SupportOne does not take the screenshot.** A screenshot cannot be redacted by field; it captures whatever happened to be visible. You pick the file, so you have already decided what is in it.
 
 There is also an optional fleet server you can host yourself: `docker compose up`, and a technician sees the machines that chose to report to them. It can only receive — there is no route that asks a machine anything, runs anything on one, or makes one report again. Details and residual risks in [docs/FLEET.md](docs/FLEET.md).
+
+## Letting someone connect
+
+SupportOne implements **no remote desktop protocol**. Writing one means writing screen capture, input injection and transport encryption — three security-critical things this project would do worse than the people who already do them.
+
+What it adds is the part those tools mostly leave out: a moment where you are told, in words, what you are about to let someone do.
+
+`--remote "Aisyah from IT"` prints what a session allows — they can see your screen, type on your keyboard, read any file you can open, and act as you on anything you are signed in to — and waits for you to type `allow`. Then it starts a remote-help program **you already have**, from a short compiled-in list, with no arguments. It never installs one, never configures one, and never connects one to anybody.
+
+And it states its own limit rather than implying more: **once a session starts, SupportOne can see nothing.** It cannot watch the session, restrict it, or end it. The audit log records that you agreed at one time and said it was over at another — an account of a decision, not surveillance of a session. Details in [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
+## Standards and schedules
+
+`--profile front-desk.json` measures a machine against a standard a technician wrote: which checks must pass, how bad each may get, why, and what to offer when one does not. It exits non-zero when the machine does not conform, so it works in a loop over a fleet.
+
+A profile **measures and never changes**. Its `offer` field names repairs to suggest; applying one still needs `--fix` and its own confirmation. A check that could not answer, or that this build does not carry, counts *against* the profile — certifying a machine on the strength of checks that did not run is not a certification.
+
+`--monthly <folder>` writes that month's client report locally, fully redacted, and sends it nowhere. `--schedule <folder>` **prints** the scheduler entry that would run it — with the line that removes it again directly beneath — and installs nothing.
 
 ## What runs where
 
@@ -100,6 +119,12 @@ With no flags it runs the checks and opens its interface in your browser, served
 | `--fleet-server` | The fleet server's address; HTTPS, or http only on this computer |
 | `--fleet-name` | What this machine should be called in that dashboard |
 | `--ticket <path>` | Write a support bundle to a file or folder |
+| `--profile <path>` | Measure this computer against a profile; exits non-zero if it does not conform |
+| `--monthly <dir>` | Write this month's client report into a folder, fully redacted, and exit |
+| `--schedule <dir>` | Print the scheduler entry that would do that monthly, and exit |
+| `--list-remote-tools` | List the remote-help programs already installed here |
+| `--remote <name>` | Agree to a remote-help session with the person named |
+| `--remote-tool <id>` | Which installed remote-help program to start |
 | `--describe` | Your own description of the problem, to go in the bundle |
 | `--attach` | Image files to include in the bundle, comma separated |
 | `--no-browser` | Print the interface address instead of opening a browser |
@@ -137,6 +162,7 @@ Adding a fix is the same shape, with one extra requirement that is a gate rather
 - [docs/FIXES.md](docs/FIXES.md) — the consent gate, every fix, every walkthrough, and what is deliberately not offered
 - [docs/EXPLAINER.md](docs/EXPLAINER.md) — the offline explainer, the optional assistant, and the egress gate
 - [docs/FLEET.md](docs/FLEET.md) — the optional server, why it can only receive, and what it does not protect against
+- [docs/OPERATIONS.md](docs/OPERATIONS.md) — monthly reports, profiles, remote help, and what each deliberately does not do
 - [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) — assets, adversaries, controls, residual risks, non-goals
 
 ## License

@@ -5,6 +5,7 @@ import {
   fetchAssistState,
   fetchFixes,
   fetchMessages,
+  fetchRemoteState,
   fetchSession,
   fetchSnapshot,
   fetchWizards,
@@ -16,6 +17,7 @@ import {
 import { ResultCard, SummaryCounts, Toggle } from './components';
 import { Assistant } from './assistant';
 import { RepairList } from './fixes';
+import { RemoteHelp } from './remote';
 import { translator } from './i18n';
 import {
   fullRedaction,
@@ -24,6 +26,7 @@ import {
   type AssistState,
   type FixSummary,
   type RedactionPolicy,
+  type RemoteState,
   type Session,
   type Snapshot,
   type WizardSummary,
@@ -38,6 +41,7 @@ export default function App() {
   const [wizards, setWizards] = useState<WizardSummary[]>([]);
   const [advice, setAdvice] = useState<Advice[]>([]);
   const [assist, setAssist] = useState<AssistState>({ enabled: false, pending: 0 });
+  const [remote, setRemote] = useState<RemoteState | null>(null);
   const [lang, setLang] = useState('');
   const [busy, setBusy] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -98,6 +102,9 @@ export default function App() {
       .catch((err: Error) => setError(err.message));
     fetchAssistState()
       .then(setAssist)
+      .catch((err: Error) => setError(err.message));
+    fetchRemoteState()
+      .then(setRemote)
       .catch((err: Error) => setError(err.message));
   }, [session]);
 
@@ -262,6 +269,7 @@ export default function App() {
           <Assistant state={assist} t={t} onError={setError} />
           <WizardList wizards={wizards} t={t} onError={setError} />
           <RepairList fixes={fixes} t={t} onError={setError} />
+          {remote && <RemoteHelp state={remote} t={t} onChange={setRemote} onError={setError} />}
 
           <section className="mt-10 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <h2 className="text-lg font-semibold">{t('ui.save')}</h2>

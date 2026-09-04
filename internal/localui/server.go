@@ -33,6 +33,7 @@ import (
 	"github.com/ZanOzair/SupportOne/internal/platform"
 	"github.com/ZanOzair/SupportOne/internal/redact"
 	"github.com/ZanOzair/SupportOne/internal/remediate"
+	"github.com/ZanOzair/SupportOne/internal/remote"
 	"github.com/ZanOzair/SupportOne/internal/wizard"
 )
 
@@ -77,6 +78,11 @@ type Config struct {
 	// Assistant is the optional second tier. Nil, or present and switched
 	// off, means the interface never offers to send anything anywhere.
 	Assistant *assist.Assistant
+
+	// Remote is the consent wrapper for a remote-help session. Optional: nil
+	// means the interface does not offer to start one, and says so rather
+	// than showing a button that fails.
+	Remote *remote.Wrapper
 
 	Version     string
 	Host        platform.Host

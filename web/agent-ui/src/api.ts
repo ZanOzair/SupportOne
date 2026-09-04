@@ -8,6 +8,9 @@ import type {
   FixSummary,
   Plan,
   RedactionPolicy,
+  RemotePlan,
+  RemoteSession,
+  RemoteState,
   Session,
   Snapshot,
   WizardSession,
@@ -162,4 +165,39 @@ export function askAssist(token: string): Promise<AssistAnswer> {
 
 export function discardAssist(token: string): Promise<{ status: string }> {
   return post('/api/assist/discard', { token });
+}
+
+/**
+ * Remote help wraps a program the user already has. SupportOne implements no
+ * remote desktop protocol, starts only a program from its compiled-in list,
+ * and can see nothing once a session begins.
+ */
+export function fetchRemoteState(): Promise<RemoteState> {
+  return request<RemoteState>('/api/remote');
+}
+
+/** Describes a session before it starts. Nothing is launched by this. */
+export function planRemote(technician: string, toolID: string): Promise<RemotePlan> {
+  return post<RemotePlan>('/api/remote/plan', { technician, tool_id: toolID });
+}
+
+/**
+ * Records the agreement and starts the tool.
+ *
+ * The acknowledged list is the one the panel displayed, sent back unedited: a
+ * confirmation that does not repeat the plan is refused by the agent, which is
+ * what makes displaying it the condition of starting.
+ */
+export function startRemote(token: string, acknowledged: string[]): Promise<RemoteSession> {
+  return post<RemoteSession>('/api/remote/start', { token, acknowledged });
+}
+
+/** Records that the user read the plan and said no, and discards the plan. */
+export function declineRemote(): Promise<{ status: string }> {
+  return post('/api/remote/decline', {});
+}
+
+/** Closes the record. It does not close the connection; nothing here can. */
+export function endRemote(): Promise<RemoteSession> {
+  return post<RemoteSession>('/api/remote/end', {});
 }

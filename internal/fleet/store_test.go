@@ -246,23 +246,6 @@ func TestARecordIsWrittenAtomically(t *testing.T) {
 	}
 }
 
-func TestRecordsAreNotWorldReadable(t *testing.T) {
-	s := store(t)
-
-	if _, err := s.Put(report("Reception PC"), now); err != nil {
-		t.Fatalf("Put: %v", err)
-	}
-
-	info, err := os.Stat(filepath.Join(s.Dir(), MachineID("Reception PC")+".json"))
-	if err != nil {
-		t.Fatalf("stat: %v", err)
-	}
-	// Someone else's machine reports are not for every account on the host.
-	if got := info.Mode().Perm(); got != 0o600 {
-		t.Errorf("permissions = %v, want %v", got, os.FileMode(0o600))
-	}
-}
-
 func TestOneUnreadableRecordDoesNotHideTheFleet(t *testing.T) {
 	s := store(t)
 

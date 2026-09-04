@@ -33,6 +33,13 @@ const (
 	EventFixRolledBack EventType = "FIX_ROLLED_BACK"
 	EventWizardEnded   EventType = "WIZARD_ENDED"
 	EventDataSent      EventType = "DATA_SENT"
+
+	// A remote-help session is neither a fix nor a transfer, so it gets its
+	// own two lines. They record that the user agreed to let someone in and
+	// later said it was over — not what happened in between, which SupportOne
+	// does not see.
+	EventRemoteStarted EventType = "REMOTE_STARTED"
+	EventRemoteEnded   EventType = "REMOTE_ENDED"
 )
 
 // Event is one line of the audit log.
