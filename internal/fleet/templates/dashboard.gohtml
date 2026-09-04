@@ -1,0 +1,49 @@
+{{ define "dashboard.gohtml" }}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ .Strings.fleet_title }}</title>
+{{ template "style.gohtml" }}
+</head>
+<body>
+<main>
+  <h1>{{ .Strings.fleet_title }}</h1>
+  <p class="muted">{{ .Strings.fleet_subtitle }}</p>
+
+  {{ if .Empty }}
+  <section class="card">
+    <p>{{ .Strings.fleet_no_machines }}</p>
+    <p class="muted">{{ .Strings.fleet_no_machines_note }}</p>
+  </section>
+  {{ else }}
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{{ .Strings.fleet_machine }}</th>
+        <th scope="col">{{ .Strings.fleet_last_seen }}</th>
+        <th scope="col" class="counts">&nbsp;</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Machines }}
+      <tr>
+        <td><a href="/machine/{{ .ID }}">{{ .Name }}</a><div class="muted">{{ .OS }}</div></td>
+        <td>
+          {{ .LastSeen }}
+          {{ if .Stale }}<div class="stale">{{ $.Strings.fleet_stale }}</div>{{ end }}
+        </td>
+        <td class="counts">
+          {{ range .Counts }}{{ if .Value }}<span class="chip {{ .Severity }}">{{ .Value }} {{ .Label }}</span>{{ end }}{{ end }}
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+  {{ end }}
+
+  <footer><p class="muted">{{ .Strings.fleet_one_way }}</p></footer>
+</main>
+</body>
+</html>
+{{ end }}

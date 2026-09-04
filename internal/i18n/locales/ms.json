@@ -393,5 +393,20 @@
   "report.patch_source": "Dibaca daripada: %s",
   "agent.ticket.written": "Bungkusan sokongan ditulis ke %s",
   "agent.ticket.contents": "Ia mengandungi laporan komputer ini, penjelasannya, keterangan anda, dan %d lampiran.",
-  "agent.ticket.not_sent": "Ia disimpan pada komputer ini dan tidak dihantar ke mana-mana. Lampirkan pada e-mel atau serahkan sendiri."
+  "agent.ticket.not_sent": "Ia disimpan pada komputer ini dan tidak dihantar ke mana-mana. Lampirkan pada e-mel atau serahkan sendiri.",
+  "fleet.title": "Armada SupportOne",
+  "fleet.subtitle": "Mesin yang telah menghantar laporan, yang terburuk dahulu. Setiap satu dihantar oleh seseorang di mesin itu yang memilih untuk menghantarnya.",
+  "fleet.machine": "Mesin",
+  "fleet.last_seen": "Laporan terakhir",
+  "fleet.no_machines": "Belum ada mesin yang menghantar laporan.",
+  "fleet.no_machines_note": "Laporan tiba apabila seseorang menjalankan ejen, menyemak penemuannya, dan memilih untuk menghantarnya ke sini. Tiada apa-apa muncul dengan sendirinya.",
+  "fleet.stale": "Hilang hubungan",
+  "fleet.reports": "Laporan disimpan",
+  "fleet.redacted": "Penghantar telah membuang butiran pengenalan daripada laporan ini. Ruang kosong itu disengajakan.",
+  "fleet.back": "← Semua mesin",
+  "fleet.findings": "Apa yang ditemui laporan terakhirnya",
+  "fleet.no_findings": "Mesin ini tidak menghantar sebarang penemuan.",
+  "fleet.what_this_means": "Apa maksudnya:",
+  "fleet.what_to_do": "Apa yang perlu dilakukan:",
+  "fleet.one_way": "Pelayan ini hanya boleh menerima. Ia tidak boleh bertanya apa-apa kepada mesin, menjalankan apa-apa padanya, atau memaksanya menghantar semula."
 }

@@ -1,0 +1,42 @@
+{{ define "machine.gohtml" }}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ .Machine.Name }} — {{ .Strings.fleet_title }}</title>
+{{ template "style.gohtml" }}
+</head>
+<body>
+<main>
+  <p><a href="/">{{ .Strings.fleet_back }}</a></p>
+  <h1>{{ .Machine.Name }}</h1>
+  <p class="muted">
+    {{ .Machine.OS }} · {{ .Strings.fleet_last_seen }}: {{ .Machine.LastSeen }} ·
+    {{ .Strings.fleet_reports }}: {{ .Reports }}
+  </p>
+  {{ if .Redacted }}<p class="muted">{{ .Strings.fleet_redacted }}</p>{{ end }}
+
+  <h2>{{ .Strings.fleet_findings }}</h2>
+  {{ if not .Findings }}<p>{{ .Strings.fleet_no_findings }}</p>{{ end }}
+
+  {{ range .Findings }}
+  <section class="card">
+    <div class="head">
+      <span class="chip {{ .Severity }}">{{ .Label }}</span>
+      <span class="check-id">{{ .ID }}</span>
+    </div>
+    <p class="summary">{{ .Summary }}</p>
+    {{ if .Error }}<p class="muted">{{ .Error }}</p>{{ end }}
+    {{ if .Cause }}<p><strong>{{ $.Strings.fleet_what_this_means }}</strong> {{ .Cause }}</p>{{ end }}
+    {{ if .Steps }}
+    <p><strong>{{ $.Strings.fleet_what_to_do }}</strong></p>
+    <ul>{{ range .Steps }}<li>{{ . }}</li>{{ end }}</ul>
+    {{ end }}
+  </section>
+  {{ end }}
+
+  <footer><p class="muted">{{ .Strings.fleet_one_way }}</p></footer>
+</main>
+</body>
+</html>
+{{ end }}

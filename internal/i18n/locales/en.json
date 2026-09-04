@@ -393,5 +393,20 @@
   "report.patch_source": "Read from: %s",
   "agent.ticket.written": "Support bundle written to %s",
   "agent.ticket.contents": "It contains this computer's report, the explanations, your description, and %d attachments.",
-  "agent.ticket.not_sent": "It has been saved to this computer and sent nowhere. Attach it to an email or hand it over yourself."
+  "agent.ticket.not_sent": "It has been saved to this computer and sent nowhere. Attach it to an email or hand it over yourself.",
+  "fleet.title": "SupportOne fleet",
+  "fleet.subtitle": "Machines that have sent a report, worst first. Every one of these was sent by a person at that machine who chose to send it.",
+  "fleet.machine": "Machine",
+  "fleet.last_seen": "Last report",
+  "fleet.no_machines": "No machine has sent a report yet.",
+  "fleet.no_machines_note": "A report arrives when someone runs the agent, reviews what it found, and chooses to send it here. Nothing appears on its own.",
+  "fleet.stale": "Out of touch",
+  "fleet.reports": "Reports held",
+  "fleet.redacted": "The sender removed identifying details from this report. The blanks are deliberate.",
+  "fleet.back": "← All machines",
+  "fleet.findings": "What its last report found",
+  "fleet.no_findings": "This machine has sent no findings.",
+  "fleet.what_this_means": "What this means:",
+  "fleet.what_to_do": "What to do:",
+  "fleet.one_way": "This server can only receive. It cannot ask a machine anything, run anything on one, or make one send again."
 }
