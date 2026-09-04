@@ -6,9 +6,9 @@ SupportOne consolidates ten IT-support functions — diagnostics, safe fixes, gu
 
 ## Status
 
-**Phase 3 of 6 — the snapshot, repairs that can be undone, and every finding explained.** Fourteen read-only checks, a local web interface, HTML and JSON reports, redaction before anything is saved, three fixes and two guided walkthroughs behind a consent gate — and now a plain-language explanation of every verdict, from a table built into the binary, plus an optional model you can point at your own endpoint.
+**Phase 4 of 6 — the snapshot, repairs, explanations, and somewhere to send them.** Fifteen read-only checks, a local web interface, HTML and JSON reports, redaction before anything is saved, three fixes and two guided walkthroughs behind a consent gate, a plain-language explanation of every verdict, an optional model you can point at your own endpoint — and now a patch statement, a support bundle you can hand to a technician, and an optional fleet server you can host yourself.
 
-The fleet server and remote help are later phases and are **not** in this build. The agent says so rather than implying otherwise.
+Remote help, provisioning and scheduled reports are later phases and are **not** in this build. The agent says so rather than implying otherwise.
 
 | Phase | Contents | State |
 |---|---|---|
@@ -16,8 +16,8 @@ The fleet server and remote help are later phases and are **not** in this build.
 | 1 | Snapshot: 12 checks, local web UI, HTML + JSON report, redaction | Complete |
 | 2 | Fixes and guided wizards, restore points, rollback | Complete |
 | 3 | Offline explainer, optional LLM assistant, performance and backup analysis | Complete |
-| 4 | Patch reporter, screenshot-to-ticket, optional fleet server | Next |
-| 5 | Remote-help consent wrapper, provisioning, scheduled reports | Planned |
+| 4 | Patch reporter, screenshot-to-ticket, optional fleet server | Complete |
+| 5 | Remote-help consent wrapper, provisioning, scheduled reports | Next |
 
 ## What it checks
 
@@ -40,6 +40,14 @@ Nothing is deleted: the two fixes that clear files move them into a quarantine d
 Every verdict any check can report is explained in plain language, with an ordered list of things to try, from a table compiled into the binary. It works with the network unplugged and needs no API key. A guard test fails the build if any verdict has no explanation — that is the gate, not a claim.
 
 An optional second tier can send the report to a model endpoint you choose. It is **off**: nothing is contacted unless you enable it, name an endpoint, read the exact bytes that would leave, and confirm that send. Whatever the model replies, the only actionable thing it can return is a repair ID, and those are checked against the repairs this build actually carries before you are offered anything. Details and reasoning in [docs/EXPLAINER.md](docs/EXPLAINER.md).
+
+## Handing it to a technician
+
+`--ticket` writes a support bundle: your description of the problem, the redacted report, the explanations, and an image you chose. It is saved to your computer and sent nowhere — attaching it to an email is your move, not the tool's.
+
+**SupportOne does not take the screenshot.** A screenshot cannot be redacted by field; it captures whatever happened to be visible. You pick the file, so you have already decided what is in it.
+
+There is also an optional fleet server you can host yourself: `docker compose up`, and a technician sees the machines that chose to report to them. It can only receive — there is no route that asks a machine anything, runs anything on one, or makes one report again. Details and residual risks in [docs/FLEET.md](docs/FLEET.md).
 
 ## What runs where
 
@@ -88,6 +96,9 @@ With no flags it runs the checks and opens its interface in your browser, served
 | `--assist` | Offer to send the report to a model endpoint (off unless given) |
 | `--assist-endpoint` | An OpenAI-shaped chat completions URL; HTTPS, or http only on this computer |
 | `--assist-model` | The model to ask for at that endpoint |
+| `--report` | Offer to send this report to the fleet server named below |
+| `--fleet-server` | The fleet server's address; HTTPS, or http only on this computer |
+| `--fleet-name` | What this machine should be called in that dashboard |
 | `--ticket <path>` | Write a support bundle to a file or folder |
 | `--describe` | Your own description of the problem, to go in the bundle |
 | `--attach` | Image files to include in the bundle, comma separated |
@@ -125,6 +136,7 @@ Adding a fix is the same shape, with one extra requirement that is a gate rather
 - [docs/CHECKS.md](docs/CHECKS.md) — every check, what it reads, and its thresholds
 - [docs/FIXES.md](docs/FIXES.md) — the consent gate, every fix, every walkthrough, and what is deliberately not offered
 - [docs/EXPLAINER.md](docs/EXPLAINER.md) — the offline explainer, the optional assistant, and the egress gate
+- [docs/FLEET.md](docs/FLEET.md) — the optional server, why it can only receive, and what it does not protect against
 - [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) — assets, adversaries, controls, residual risks, non-goals
 
 ## License

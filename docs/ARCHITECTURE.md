@@ -32,7 +32,7 @@ internal/
     cim/                shared decoder for Windows CIM/WMI JSON
     system/ storage/ network/ events/
     updates/ startup/ security/ drivers/
-    performance/ backup/
+    performance/ backup/ patches/
   fixes/                remediation plugin contract + registry + quarantine
     all/                the whitelist: which fixes are compiled in
     temp/ dns/ spooler/
@@ -43,6 +43,10 @@ internal/
     connection/ printing/
   explain/              Tier 1: every verdict explained, offline
   assist/               Tier 2: the optional model, behind the egress gate
+  egress/               the one rule about where this agent may connect
+  enrol/                sending one report to a fleet server, gated the same way
+  ticket/               the support bundle: description, snapshot, advice, image
+  fleet/                the optional server: store, dashboard, one-way by design
   consent/              the append-only audit log
   localui/              the loopback server that hosts the interface
   redact/               removing identifying detail before anything is saved
@@ -120,6 +124,16 @@ The rules and the reasoning for each shipped fix are in [FIXES.md](FIXES.md).
 
 `internal/assist` is the optional second tier and the only outbound connection in the codebase. It is off unless switched on, it shows the exact payload before sending, and its answer is contained: fix IDs through the registry, prose stripped and capped and shown as the model's own. [EXPLAINER.md](EXPLAINER.md) has the rules and the reasoning.
 
+## Egress
+
+`internal/egress` holds the one rule about where this agent may connect: HTTPS everywhere except this machine, where plain HTTP on loopback is allowed because the traffic never leaves it. Exactly two things can ask for a connection — the optional assistant and the optional fleet report — and both come through here, so the rule is written once and cannot drift between them.
+
+Both follow the same shape: off by default, no default destination, the exact bytes shown before anything leaves, a one-use confirmation bound to that payload, and `DATA_SENT` in the audit log with the host rather than the URL.
+
+## The fleet server
+
+`internal/fleet` is the optional, self-hostable side: a store of files rather than rows, and a server-rendered dashboard with no script at all. It receives and nothing else — there is no route that asks a machine anything. [FLEET.md](FLEET.md) has the rules and the residual risks.
+
 ## The local interface
 
 The agent serves its own interface rather than shipping a GUI toolkit, so the same screens render on every OS and the binary stays a few megabytes.
@@ -150,5 +164,5 @@ It is append-only, created `0600`, and values are escaped so a field can never f
 | 1 | Snapshot: 12 checks, local web UI, HTML+JSON report, redaction | A report worth sending a client |
 | 2 | Fixes and guided wizards, restore points, consent flow | Every fix has a passing rollback test — done |
 | 3 | Tier-1 offline explainer, optional Tier-2 LLM, performance and backup analysis | Every check result explained offline, no API key — done |
-| 4 | Patch reporter, screenshot-to-ticket, optional server and dashboard | Compose up, technician sees a real fleet |
+| 4 | Patch reporter, screenshot-to-ticket, optional server and dashboard | Compose up, technician sees a real fleet — done |
 | 5 | Remote-help consent wrapper, provisioning, scheduled reports | A monthly client report generates end to end |

@@ -408,5 +408,14 @@
   "fleet.no_findings": "This machine has sent no findings.",
   "fleet.what_this_means": "What this means:",
   "fleet.what_to_do": "What to do:",
-  "fleet.one_way": "This server can only receive. It cannot ask a machine anything, run anything on one, or make one send again."
+  "fleet.one_way": "This server can only receive. It cannot ask a machine anything, run anything on one, or make one send again.",
+  "agent.report.heading": "Sending this report to a fleet server",
+  "agent.report.destination": "It would go to %s, filed under the name %s.",
+  "agent.report.size": "It is %d bytes, and this is all of it.",
+  "agent.report.redacted": "Computer name, username, serial numbers and network addresses have been removed.",
+  "agent.report.payload": "This is exactly what would be sent:",
+  "agent.report.confirm": "Type send to send it, or press Enter to send nothing:",
+  "agent.report.not_sent": "Nothing was sent.",
+  "agent.report.sent": "The report was accepted by %s.",
+  "agent.report.one_way": "That server can only receive. It cannot ask this computer anything, run anything on it, or make it report again."
 }

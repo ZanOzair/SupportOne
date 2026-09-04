@@ -29,16 +29,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/url"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/ZanOzair/SupportOne/internal/checks"
 	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/egress"
 	"github.com/ZanOzair/SupportOne/internal/fixes"
 	"github.com/ZanOzair/SupportOne/internal/platform"
 	"github.com/ZanOzair/SupportOne/internal/redact"
@@ -323,50 +321,28 @@ func newToken() (string, error) {
 }
 
 // CheckEndpoint refuses an endpoint that would put the snapshot on the wire in
-// the clear.
-//
-// HTTPS is required everywhere except this machine. A local model server on
-// 127.0.0.1 over plain HTTP is the common, sensible case — the traffic never
-// leaves the computer — and refusing it would push people towards a hosted
-// service instead, which is the opposite of what this is for.
+// the clear. The rule itself lives in internal/egress, so the assistant and
+// the fleet report cannot drift apart on where this agent may connect.
 func CheckEndpoint(raw string) error {
-	if strings.TrimSpace(raw) == "" {
-		return fmt.Errorf("assist: no endpoint is configured")
-	}
-
-	parsed, err := url.Parse(raw)
-	if err != nil {
-		return fmt.Errorf("assist: the endpoint is not a URL: %w", err)
-	}
-
-	switch parsed.Scheme {
-	case "https":
-		return nil
-	case "http":
-		if isLoopback(parsed.Hostname()) {
-			return nil
+	if err := egress.CheckURL(raw); err != nil {
+		if errors.Is(err, egress.ErrInsecure) {
+			// Both errors matter: the caller distinguishes on the
+			// assistant's own sentinel, and the reader needs the detail
+			// egress gave.
+			return fmt.Errorf("%w: %w", ErrInsecureEndpoint, err)
 		}
-		return fmt.Errorf("%w: %s", ErrInsecureEndpoint, parsed.Host)
-	default:
-		return fmt.Errorf("assist: %q is not a scheme this sends over", parsed.Scheme)
+		return fmt.Errorf("assist: %w", err)
 	}
-}
-
-func isLoopback(host string) bool {
-	if host == "localhost" {
-		return true
-	}
-	ip := net.ParseIP(strings.Trim(host, "[]"))
-	return ip != nil && ip.IsLoopback()
+	return nil
 }
 
 // endpointHost returns the host and port, without the path or query.
 func endpointHost(raw string) (string, error) {
-	parsed, err := url.Parse(raw)
+	host, err := egress.Host(raw)
 	if err != nil {
-		return "", fmt.Errorf("assist: the endpoint is not a URL: %w", err)
+		return "", fmt.Errorf("assist: %w", err)
 	}
-	return parsed.Host, nil
+	return host, nil
 }
 
 // send performs the request. It is the only function in SupportOne that opens

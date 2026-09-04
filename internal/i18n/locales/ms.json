@@ -408,5 +408,14 @@
   "fleet.no_findings": "Mesin ini tidak menghantar sebarang penemuan.",
   "fleet.what_this_means": "Apa maksudnya:",
   "fleet.what_to_do": "Apa yang perlu dilakukan:",
-  "fleet.one_way": "Pelayan ini hanya boleh menerima. Ia tidak boleh bertanya apa-apa kepada mesin, menjalankan apa-apa padanya, atau memaksanya menghantar semula."
+  "fleet.one_way": "Pelayan ini hanya boleh menerima. Ia tidak boleh bertanya apa-apa kepada mesin, menjalankan apa-apa padanya, atau memaksanya menghantar semula.",
+  "agent.report.heading": "Menghantar laporan ini ke pelayan armada",
+  "agent.report.destination": "Ia akan pergi ke %s, difailkan di bawah nama %s.",
+  "agent.report.size": "Saiznya %d bait, dan inilah keseluruhannya.",
+  "agent.report.redacted": "Nama komputer, nama pengguna, nombor siri dan alamat rangkaian telah dibuang.",
+  "agent.report.payload": "Inilah dengan tepat apa yang akan dihantar:",
+  "agent.report.confirm": "Taip send untuk menghantarnya, atau tekan Enter untuk tidak menghantar apa-apa:",
+  "agent.report.not_sent": "Tiada apa-apa dihantar.",
+  "agent.report.sent": "Laporan telah diterima oleh %s.",
+  "agent.report.one_way": "Pelayan itu hanya boleh menerima. Ia tidak boleh bertanya apa-apa kepada komputer ini, menjalankan apa-apa padanya, atau memaksanya melapor semula."
 }

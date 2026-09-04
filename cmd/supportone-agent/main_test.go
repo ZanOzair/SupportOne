@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/ZanOzair/SupportOne/internal/checks"
+	"github.com/ZanOzair/SupportOne/internal/redact"
 )
 
 func TestVersionFlag(t *testing.T) {
@@ -441,8 +442,12 @@ func TestTypingSendSendsExactlyWhatWasShown(t *testing.T) {
 	if received == "" {
 		t.Fatal("nothing was sent after the send was confirmed")
 	}
-	// The terminal path always redacts, and what went out proves it.
-	if strings.Contains(received, redactableHostname(t)) {
+	// The terminal path always redacts, and what went out proves it: the
+	// visible marker is there, and the hostname is not.
+	if !strings.Contains(received, redact.Marker) {
+		t.Error("nothing in the sent payload was redacted")
+	}
+	if host := searchableHostname(t); host != "" && strings.Contains(received, host) {
 		t.Error("the sent payload carries this machine's hostname")
 	}
 	// The model's words are marked as the model's words.
@@ -491,14 +496,19 @@ func TestNothingReachesTheNetworkWithoutAssist(t *testing.T) {
 	}
 }
 
-// redactableHostname returns this machine's hostname, which full redaction
-// must remove from anything that leaves.
-func redactableHostname(t *testing.T) string {
+// searchableHostname returns this machine's hostname when it is long enough
+// to search for meaningfully, and "" when it is not.
+//
+// A build machine can be called "vm". Searching a payload for a two-character
+// string matches package names, base64 and compressed bytes, so an assertion
+// built on it proves nothing and fails at random. Where the name is too short,
+// the redaction marker is the assertion that carries the weight.
+func searchableHostname(t *testing.T) string {
 	t.Helper()
 
 	name, err := os.Hostname()
-	if err != nil || name == "" {
-		t.Skip("this machine reports no hostname, so there is nothing to assert was removed")
+	if err != nil || len(name) < 6 {
+		return ""
 	}
 	return name
 }
@@ -555,16 +565,49 @@ func TestTheTicketBundleIsRedacted(t *testing.T) {
 		t.Fatalf("run: %v", err)
 	}
 
-	raw, err := os.ReadFile(out)
+	archive, err := zip.OpenReader(out)
 	if err != nil {
-		t.Fatalf("read bundle: %v", err)
+		t.Fatalf("open bundle: %v", err)
+	}
+	defer archive.Close()
+
+	var manifest []byte
+	for _, f := range archive.File {
+		if f.Name != "ticket.json" {
+			continue
+		}
+		r, err := f.Open()
+		if err != nil {
+			t.Fatalf("open ticket.json: %v", err)
+		}
+		manifest, err = io.ReadAll(io.LimitReader(r, 4<<20))
+		_ = r.Close()
+		if err != nil {
+			t.Fatalf("read ticket.json: %v", err)
+		}
+	}
+	if manifest == nil {
+		t.Fatal("the bundle has no ticket.json")
+	}
+
+	var decoded struct {
+		Redacted bool `json:"redacted"`
+	}
+	if err := json.Unmarshal(manifest, &decoded); err != nil {
+		t.Fatalf("decode ticket.json: %v", err)
 	}
 	// A bundle is built to be handed to someone else, so the terminal path
 	// redacts fully rather than asking field by field.
-	if hostname, err := os.Hostname(); err == nil && hostname != "" {
-		if bytes.Contains(raw, []byte(hostname)) {
-			t.Error("the bundle carries this machine's hostname")
-		}
+	if !decoded.Redacted {
+		t.Error("the bundle does not record that it was redacted")
+	}
+
+	// And redaction actually ran, which the visible marker proves. Searching
+	// the archive for this machine's hostname would not: a hostname can be
+	// two characters long, and a substring that short matches noise inside a
+	// compressed archive.
+	if !bytes.Contains(manifest, []byte(redact.Marker)) {
+		t.Errorf("nothing in the bundle was redacted; expected %q somewhere", redact.Marker)
 	}
 }
 
@@ -611,5 +654,167 @@ func TestABundleRefusesAnAttachmentThatIsNotAnImage(t *testing.T) {
 	// support label.
 	if err := run(args, strings.NewReader(""), &stdout, &stderr); err == nil {
 		t.Error("a private key was accepted as an attachment")
+	}
+}
+
+// TestReportingToAFleetNeedsAServerAndAName is the first line of the second
+// egress gate: there is nothing to fall back to.
+func TestReportingToAFleetNeedsAServerAndAName(t *testing.T) {
+	cases := [][]string{
+		{"--text", "--report"},
+		{"--text", "--report", "--fleet-server", "https://fleet.example.com"},
+		{"--text", "--report", "--fleet-name", "Reception PC"},
+	}
+	for _, args := range cases {
+		var stdout, stderr bytes.Buffer
+		if err := run(args, strings.NewReader(""), &stdout, &stderr); err == nil {
+			t.Errorf("run accepted %v", args)
+		}
+	}
+}
+
+func TestAFleetServerThatWouldSendInTheClearIsRefused(t *testing.T) {
+	for _, server := range []string{"http://fleet.example.com", "ftp://example.com", "not a url"} {
+		var stdout, stderr bytes.Buffer
+		args := []string{"--text", "--report", "--fleet-server", server, "--fleet-name", "Reception PC"}
+
+		if err := run(args, strings.NewReader(""), &stdout, &stderr); err == nil {
+			t.Errorf("--fleet-server %q was accepted", server)
+		}
+	}
+}
+
+func TestTheFleetReportShowsThePayloadAndSendsNothingWithoutSend(t *testing.T) {
+	var reached int
+	fleetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		reached++
+		_, _ = w.Write([]byte(`{"status":"stored","machine":"abc"}`))
+	}))
+	defer fleetServer.Close()
+
+	t.Setenv("SUPPORTONE_FLEET_TOKEN", "a-real-token-long-enough-to-use")
+
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--text", "--report",
+		"--fleet-server", fleetServer.URL,
+		"--fleet-name", "Reception PC",
+		"--lang", "en", "--no-explain",
+		"--audit-log", filepath.Join(t.TempDir(), "audit.log"),
+	}
+
+	// An empty line at the prompt. Silence is not consent here either.
+	if err := run(args, strings.NewReader("\n"), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "This is exactly what would be sent:") {
+		t.Errorf("the payload was not shown:\n%s", out)
+	}
+	if !strings.Contains(out, "Nothing was sent.") {
+		t.Errorf("the refusal was not reported:\n%s", out)
+	}
+	if reached != 0 {
+		t.Errorf("the server was contacted %d times without a confirmation", reached)
+	}
+}
+
+func TestTypingSendReportsToTheFleet(t *testing.T) {
+	var received string
+	fleetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+		received = string(body)
+		_, _ = w.Write([]byte(`{"status":"stored","machine":"abc"}`))
+	}))
+	defer fleetServer.Close()
+
+	t.Setenv("SUPPORTONE_FLEET_TOKEN", "a-real-token-long-enough-to-use")
+
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--text", "--report",
+		"--fleet-server", fleetServer.URL,
+		"--fleet-name", "Reception PC",
+		"--lang", "en", "--no-explain",
+		"--audit-log", filepath.Join(t.TempDir(), "audit.log"),
+	}
+	if err := run(args, strings.NewReader("send\n"), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	if received == "" {
+		t.Fatal("nothing was sent after the send was confirmed")
+	}
+	if !strings.Contains(received, "Reception PC") {
+		t.Error("the report does not carry the name the user chose")
+	}
+	// The terminal path always redacts, and what went out proves it.
+	if !strings.Contains(received, redact.Marker) {
+		t.Error("nothing in the sent report was redacted")
+	}
+	if host := searchableHostname(t); host != "" && strings.Contains(received, host) {
+		t.Error("the report carries this machine's hostname")
+	}
+	if !strings.Contains(stdout.String(), "can only receive") {
+		t.Errorf("the output does not say what that server can and cannot do:\n%s", stdout.String())
+	}
+}
+
+func TestNothingReachesAFleetWithoutReport(t *testing.T) {
+	var reached int
+	fleetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		reached++
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer fleetServer.Close()
+
+	t.Setenv("SUPPORTONE_FLEET_TOKEN", "a-real-token-long-enough-to-use")
+
+	// The server and name are given but --report is not, so nothing is
+	// offered and nothing is contacted.
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--text",
+		"--fleet-server", fleetServer.URL,
+		"--fleet-name", "Reception PC",
+		"--lang", "en", "--no-explain",
+		"--audit-log", filepath.Join(t.TempDir(), "audit.log"),
+	}
+	if err := run(args, strings.NewReader("send\n"), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if reached != 0 {
+		t.Errorf("the server was contacted %d times without --report", reached)
+	}
+}
+
+func TestReportingWithNoTokenSaysSoBeforeAskingAnything(t *testing.T) {
+	fleetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer fleetServer.Close()
+
+	t.Setenv("SUPPORTONE_FLEET_TOKEN", "")
+
+	var stdout, stderr bytes.Buffer
+	args := []string{
+		"--text", "--report",
+		"--fleet-server", fleetServer.URL,
+		"--fleet-name", "Reception PC",
+		"--lang", "en", "--no-explain",
+		"--audit-log", filepath.Join(t.TempDir(), "audit.log"),
+	}
+
+	err := run(args, strings.NewReader("send\n"), &stdout, &stderr)
+	if err == nil {
+		t.Fatal("run proceeded with no fleet token set")
+	}
+	if !strings.Contains(err.Error(), "SUPPORTONE_FLEET_TOKEN") {
+		t.Errorf("the error does not say what to set: %v", err)
+	}
+	// And it said so before showing a payload and taking a decision on it.
+	if strings.Contains(stdout.String(), "This is exactly what would be sent:") {
+		t.Error("a payload was shown before the missing credential was noticed")
 	}
 }

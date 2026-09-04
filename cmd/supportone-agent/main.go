@@ -20,6 +20,7 @@ import (
 	"github.com/ZanOzair/SupportOne/internal/checks"
 	_ "github.com/ZanOzair/SupportOne/internal/checks/all"
 	"github.com/ZanOzair/SupportOne/internal/consent"
+	"github.com/ZanOzair/SupportOne/internal/egress"
 	"github.com/ZanOzair/SupportOne/internal/explain"
 	"github.com/ZanOzair/SupportOne/internal/fixes"
 	_ "github.com/ZanOzair/SupportOne/internal/fixes/all"
@@ -58,6 +59,11 @@ type options struct {
 	ticket   string
 	describe string
 	attach   string
+
+	// The fleet report. Off unless every one of these is given.
+	report      bool
+	fleetServer string
+	fleetName   string
 
 	// The assistant is off unless every one of these is given. Nothing
 	// reaches the network on a default invocation.
@@ -157,7 +163,12 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		snap := takeSnapshot(ctx, audit, host, opts)
 		writeText(stdout, bundle, snap, host, opts, audit.Path())
 		if opts.assist {
-			return askAssistant(ctx, stdin, stdout, bundle, audit, host, snap, opts)
+			if err := askAssistant(ctx, stdin, stdout, bundle, audit, host, snap, opts); err != nil {
+				return err
+			}
+		}
+		if opts.report {
+			return sendReport(ctx, stdin, stdout, bundle, audit, snap, opts)
 		}
 		return nil
 	default:
@@ -182,6 +193,9 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	fs.StringVar(&opts.ticket, "ticket", "", "write a support bundle to this file or folder and exit")
 	fs.StringVar(&opts.describe, "describe", "", "your own description of the problem, to go in the bundle")
 	fs.StringVar(&opts.attach, "attach", "", "image files to include in the bundle, comma separated")
+	fs.BoolVar(&opts.report, "report", false, "offer to send this report to the fleet server named below")
+	fs.StringVar(&opts.fleetServer, "fleet-server", "", "the fleet server's address; HTTPS, or http only on this computer")
+	fs.StringVar(&opts.fleetName, "fleet-name", "", "what this machine should be called in that dashboard")
 	fs.BoolVar(&opts.assist, "assist", false, "offer to send the report to the model endpoint configured below")
 	fs.StringVar(&opts.assistEndpoint, "assist-endpoint", "", "an OpenAI-shaped chat completions URL; HTTPS, or http only on this computer")
 	fs.StringVar(&opts.assistModel, "assist-model", "", "the model to ask for at that endpoint")
@@ -211,6 +225,17 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 			return options{}, fmt.Errorf("--assist needs --assist-endpoint: there is no default, and no endpoint is contacted without one")
 		}
 		if err := assist.CheckEndpoint(opts.assistEndpoint); err != nil {
+			return options{}, err
+		}
+	}
+	if opts.report {
+		if opts.fleetServer == "" {
+			return options{}, fmt.Errorf("--report needs --fleet-server: there is no default, and no server is contacted without one")
+		}
+		if opts.fleetName == "" {
+			return options{}, fmt.Errorf("--report needs --fleet-name: what this machine is called in someone else's dashboard is your decision, not something to take from the hostname")
+		}
+		if err := egress.CheckURL(opts.fleetServer); err != nil {
 			return options{}, err
 		}
 	}

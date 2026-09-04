@@ -98,9 +98,34 @@ Residual risk: a process running as the user can delete or truncate the file. De
 
 Residual risk: pinning and scanning reduce exposure to known-vulnerable and typosquatted dependencies. Neither detects a novel backdoor in a legitimate dependency, and reproducible builds prove a binary matches a source tree — not that the source tree is benign.
 
-### Fleet server *(Phase 4)*
+### Fleet server
 
-Planned: Argon2id password hashing, per-tenant data isolation, TLS required, rate limiting, no telemetry, and self-hosting documentation so data can stay in one jurisdiction for PDPA/GDPR purposes. This section will be rewritten with specifics when the server exists.
+Optional, self-hostable, and off unless someone runs it. The agent works fully without it.
+
+- **The arrow points one way.** The server receives reports and has no route that asks a machine anything, runs anything on one, or makes one report again. Absent, not disabled: a test asserts it by trying /api/run, /api/fix, /api/command and /api/collect and requiring every one to be missing.
+- Nothing is installed as a service on a reported machine. Every report exists because a person at that machine ran the agent, saw the exact bytes, and typed `send`.
+- It refuses to start without a token of at least 24 characters, and compose declares the variable with no default. A default becomes the token every deployment that skipped the step is using.
+- The submission API takes a bearer token; the dashboard uses the browser's own credential prompt rather than a session mechanism of our own. Both compare in constant time.
+- A machine is filed under a digest of the name its user chose, so the name never reaches a URL, a log line, or a file listing. The server's log records identifiers, never names: a fleet log should not become a directory of whose computer is whose.
+- Records are written to a temporary file and renamed into place at 0600. Request bodies are bounded; the dashboard is server-rendered and its Content-Security-Policy permits no script at all.
+- The runtime image is `scratch`: a static binary, a CA bundle, and no shell to run if someone gets a command into it. Read-only, all capabilities dropped, no-new-privileges, non-root.
+
+Residual risks:
+
+- **One shared token.** Anyone holding it can submit a report under any name and can read the whole fleet. There are no per-machine credentials and no way to tell two senders apart. That suits a technician and the machines they look after; it is not what tenants who distrust each other would need.
+- **A report is a claim, not an attestation.** The server stores what it was sent, and the sender chooses the name it is filed under.
+- **Reports are only as fresh as the last send.** Nothing polls, so "out of touch" is a state the server can display and not one it can resolve.
+- **TLS is not this server's job.** It speaks plain HTTP and must sit behind a proxy that terminates TLS; compose binds it to loopback until someone decides otherwise.
+- The data directory holds other people's machine reports. They are 0600, but anyone with the volume has them.
+
+### Support bundles
+
+A ticket carries a description, the redacted snapshot, the offline advice, and an image the user chose.
+
+- **SupportOne has no screen-capture code.** A screenshot cannot be redacted by field: it captures whatever happened to be visible. The user picks the file, so they have already decided what is in it, and this binary has no capability to abuse.
+- Attachments are judged by sniffed content, not by extension, and only images are accepted — a support bundle must not become a way to move anything off a machine under a support label.
+- Names are reduced to one safe file name inside `attachments/`, with backslashes treated as separators whatever platform built the bundle, and an attachment cannot take the name of the bundle's own files.
+- Writing a bundle is not sending one. It is saved locally and the output says so.
 
 ## Non-goals
 
