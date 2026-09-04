@@ -162,13 +162,42 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      # A 400 here reading "Invalid package tree" is the registry rejecting an
-      # incomplete package-lock.json, not a flake and not the audit endpoint
-      # being down. Run `npm install --package-lock-only` and commit the
-      # result; bundled sub-dependencies of an optional platform package are
-      # the usual thing missing.
+      # npm's audit endpoint is unreliable: it has returned 400 and 503 and
+      # succeeded, all on the same lockfile within one hour, and npm has
+      # announced this endpoint is being retired. A transient failure there
+      # must not be able to look like a clean audit, and must not turn the
+      # build red on its own either.
+      #
+      # So: a real advisory fails immediately, because retrying will not
+      # change it. Only a registry failure is retried, and exhausting the
+      # retries still fails the build. Nothing here can pass an audit that
+      # did not actually run.
+      #
+      # When the endpoint is finally retired, replace this with a scanner
+      # that reads the lockfile against its own database — osv-scanner does,
+      # and exits non-zero both on findings and on an unreachable database.
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        run: |
+          for attempt in 1 2 3; do
+            if output=$(npm audit --audit-level=high 2>&1); then
+              printf '%s\n' "$output"
+              exit 0
+            fi
+            printf '%s\n' "$output"
+
+            if ! printf '%s' "$output" | grep -q 'audit endpoint returned an error'; then
+              echo "A dependency has a high-severity advisory. Fix or update it."
+              exit 1
+            fi
+
+            echo "The npm audit endpoint failed (attempt ${attempt} of 3)."
+            sleep $((attempt * 20))
+          done
+
+          echo "The npm audit endpoint did not answer after 3 attempts, so the"
+          echo "dependencies were never actually audited. Failing rather than"
+          echo "reporting an audit that did not run."
+          exit 1
 
       - name: Build
         run: npm run build
