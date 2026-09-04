@@ -54,11 +54,13 @@ internal/
   localui/              the loopback server that hosts the interface
   redact/               removing identifying detail before anything is saved
   report/               HTML and JSON rendering
+  provenance/           what a build is, and what saying so is worth
   platform/             OS abstraction layer
   i18n/                 embedded message catalogs
 web/agent-ui/           the interface: TypeScript, React, Tailwind, Vite
+scripts/release.sh      the reproducible build every release and person runs
 docs/
-.github/workflows/      build, test, lint, vulnerability scan, SBOM
+.github/workflows/      build, test, lint, vulnerability scan, SBOM, release
 ```
 
 Directories arrive with the phase that needs them. There are no empty placeholders for features that do not exist yet.
@@ -169,6 +171,14 @@ Check results and fix explanations carry i18n message keys rather than English s
 
 It is append-only, created `0600`, and values are escaped so a field can never forge a second entry. It records what happened, never credentials or file contents.
 
+## Releases
+
+`scripts/release.sh` is the whole build: six targets for the agent, two for the fleet server, deterministic archives, checksums, and a `BUILD-INFO.txt` naming what it takes to reproduce them. CI runs exactly that script rather than its own copy of the steps, so what a person can rebuild is what was actually published.
+
+Determinism is not a side effect. `-trimpath` removes the building machine's paths, every timestamp comes from the commit rather than the clock, archive entries are sorted with fixed ownership, and gzip is told not to record a name or a time. The script refuses to run with BSD tar instead of producing an archive whose bytes depend on directory order.
+
+`internal/provenance` is the other half: what a binary says about itself, and the sentence keeping that honest. It reads the Go toolchain from the runtime and the modified flag from Go's own VCS stamp, so a build made from a dirty tree says so rather than quoting a commit it does not match. [RELEASE.md](RELEASE.md) covers verification, and what is deliberately not signed.
+
 ## Phase map
 
 | Phase | Adds | Ships when |
@@ -179,4 +189,4 @@ It is append-only, created `0600`, and values are escaped so a field can never f
 | 3 | Tier-1 offline explainer, optional Tier-2 LLM, performance and backup analysis | Every check result explained offline, no API key — done |
 | 4 | Patch reporter, screenshot-to-ticket, optional server and dashboard | Compose up, technician sees a real fleet — done |
 | 5 | Remote-help consent wrapper, provisioning profiles, scheduled reports | A monthly client report generates end to end — done |
-| 6 | Signing, notarization, packaged installers, release automation | A user downloads one file and their OS does not warn them |
+| 6 | Reproducible release, Sigstore signing, provenance, digest-pinned CI | Two independent builds of a tag produce identical bytes — done |

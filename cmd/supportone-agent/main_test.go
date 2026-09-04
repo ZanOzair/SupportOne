@@ -23,11 +23,42 @@ import (
 
 func TestVersionFlag(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	if err := run([]string{"--version"}, strings.NewReader(""), &stdout, &stderr); err != nil {
+	if err := run([]string{"--version", "--lang", "en"}, strings.NewReader(""), &stdout, &stderr); err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	if !strings.Contains(stdout.String(), "supportone-agent") {
-		t.Errorf("stdout = %q, want build information", stdout.String())
+
+	out := stdout.String()
+	if !strings.Contains(out, "supportone-agent") {
+		t.Errorf("stdout = %q, want build information", out)
+	}
+	if !strings.Contains(out, runtime.Version()) {
+		t.Errorf("stdout = %q, want the Go toolchain that built it", out)
+	}
+
+	// The number is not the point. A version a program prints about itself is
+	// not evidence, and the output has to say so rather than leaving a reader
+	// to assume otherwise.
+	if !strings.Contains(out, "not proof") {
+		t.Errorf("the version output presents itself as evidence:\n%s", out)
+	}
+	if !strings.Contains(out, "SHA256SUMS") {
+		t.Errorf("the version output does not point at a check worth something:\n%s", out)
+	}
+}
+
+func TestAnUnpublishedBuildSaysSoInItsReport(t *testing.T) {
+	// These tests run against a build nobody released, which is the case the
+	// report must be honest about: a saved report is read later, often by
+	// someone else.
+	var stdout, stderr bytes.Buffer
+	args := []string{"--text", "--lang", "en", "--audit-log", filepath.Join(t.TempDir(), "audit.log")}
+	if err := run(args, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "development build") && !strings.Contains(out, "uncommitted changes") {
+		t.Errorf("the report does not say this build was never published:\n%s", out[:min(600, len(out))])
 	}
 }
 

@@ -105,14 +105,14 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		return err
 	}
 
-	if opts.showVer {
-		fmt.Fprintf(stdout, "supportone-agent %s (commit %s, built %s)\n", version, commit, buildDate)
-		return nil
-	}
-
 	bundle, err := i18n.Load(opts.lang)
 	if err != nil {
 		return err
+	}
+
+	if opts.showVer {
+		writeProvenance(stdout, bundle)
+		return nil
 	}
 
 	host := platform.CurrentHost()
@@ -385,8 +385,10 @@ func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform
 
 func writeText(w io.Writer, bundle *i18n.Bundle, snap checks.Snapshot, host platform.Host, opts options, auditPath string) {
 	fmt.Fprintf(w, "%s %s — %s\n\n", bundle.T("app.name"), version, bundle.T("app.tagline"))
-	if version == "dev" {
-		fmt.Fprintf(w, "%s\n", bundle.T("agent.build.unsigned"))
+	if build := thisBuild(); !build.Released {
+		// A report is read later, often by someone else. It should say when
+		// it came from a build nobody published.
+		fmt.Fprintf(w, "%s\n", bundle.T(build.Notes()[0]))
 	}
 	if opts.dryRun {
 		fmt.Fprintf(w, "%s\n", bundle.T("agent.dry_run.active"))

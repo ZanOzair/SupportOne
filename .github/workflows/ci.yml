@@ -9,8 +9,11 @@ permissions:
   contents: read
 
 env:
-  # Tool versions are pinned so a CI run is reproducible. Actions are pinned to
-  # major tags today and will move to commit digests when release signing lands.
+  # Tool versions are pinned so a CI run is reproducible, and actions are
+  # pinned to commit digests rather than tags: a tag can be moved under you,
+  # and an action runs with the same access as the job that calls it. The
+  # trailing comment on each is the version that digest was, so a person can
+  # read the file without looking anything up.
   GOLANGCI_LINT_VERSION: v2.13.2
   GOVULNCHECK_VERSION: v1.7.0
   CYCLONEDX_GOMOD_VERSION: v1.12.0
@@ -27,8 +30,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: go.mod
           check-latest: true
@@ -54,50 +57,30 @@ jobs:
           awk -v got="$total" -v min="$MIN_COVERAGE" 'BEGIN { exit (got + 0 >= min + 0) ? 0 : 1 }'
 
   build:
-    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    name: Build every target
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - goos: windows
-            goarch: amd64
-          - goos: windows
-            goarch: arm64
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
-          - goos: linux
-            goarch: amd64
-          - goos: linux
-            goarch: arm64
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # git describe needs the tags, and the build's timestamp comes from
+          # the commit rather than the clock.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: go.mod
           check-latest: true
 
+      # The same script a release runs and a person can run, rather than CI's
+      # own copy of the build flags. One definition means the artifacts anyone
+      # rebuilds are the artifacts that were published, and there is no second
+      # place for -trimpath or CGO_ENABLED to drift out of agreement.
       - name: Build
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: "0"
-        run: |
-          suffix=""
-          if [ "$GOOS" = "windows" ]; then suffix=".exe"; fi
-          mkdir -p dist
-          for cmd in supportone-agent supportone-server; do
-            go build -trimpath \
-              -ldflags "-s -w -X main.version=${GITHUB_REF_NAME} -X main.commit=${GITHUB_SHA} -X main.buildDate=${SOURCE_DATE_EPOCH:-unknown}" \
-              -o "dist/${cmd}-${GOOS}-${GOARCH}${suffix}" "./cmd/${cmd}"
-          done
-          ls -lh dist
+        run: scripts/release.sh dist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: supportone-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: supportone-artifacts
           path: dist/
           retention-days: 7
 
@@ -105,8 +88,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.TOOLCHAIN_GO_VERSION }}
 
@@ -129,8 +112,8 @@ jobs:
     name: Vulnerability scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.TOOLCHAIN_GO_VERSION }}
 
@@ -146,8 +129,8 @@ jobs:
       run:
         working-directory: web/agent-ui
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -218,8 +201,8 @@ jobs:
     name: SBOM
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.TOOLCHAIN_GO_VERSION }}
 
@@ -228,7 +211,7 @@ jobs:
           go install "github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@${CYCLONEDX_GOMOD_VERSION}"
           cyclonedx-gomod mod -json -output sbom.cdx.json
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sbom
           path: sbom.cdx.json

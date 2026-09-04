@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/ZanOzair/SupportOne/internal/fleet"
+	"github.com/ZanOzair/SupportOne/internal/provenance"
 )
 
 // Build metadata, set via -ldflags at release time.
@@ -56,7 +57,7 @@ func run(args []string, getenv func(string) string, stdout, stderr io.Writer) er
 	}
 
 	if opts.showVer {
-		fmt.Fprintf(stdout, "supportone-server %s (commit %s, built %s)\n", version, commit, buildDate)
+		fmt.Fprintf(stdout, "%s\n", provenance.Current("supportone-server", version, commit, buildDate).Line())
 		return nil
 	}
 

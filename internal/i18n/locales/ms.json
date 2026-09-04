@@ -5,7 +5,6 @@
   "severity.attention": "Perlu perhatian",
   "severity.urgent": "Mendesak",
   "severity.unknown": "Tidak dapat diperiksa",
-  "agent.build.unsigned": "Ini ialah binaan pembangunan yang tidak ditandatangani.",
   "agent.checks.none": "Binaan ini belum mempunyai sebarang pemeriksaan diagnostik.",
   "agent.checks.available": "%d pemeriksaan tersedia pada %s.",
   "agent.checks.requires_admin": "memerlukan hak pentadbir",
@@ -473,5 +472,9 @@
   "ui.remote.open": "Sesi dengan %s direkodkan sebagai terbuka.",
   "ui.remote.cannot_end": "SupportOne tidak dapat melihat sesi ini atau menamatkannya. Menutup program bantuan jarak jauh itulah yang menamatkannya; butang di bawah hanya menutup rekod.",
   "ui.remote.mark_ended": "Sesi telah tamat",
-  "ui.remote.ended": "Sesi ini direkodkan sebagai telah tamat."
+  "ui.remote.ended": "Sesi ini direkodkan sebagai telah tamat.",
+  "build.self_reported": "Itulah yang dikatakan oleh salinan ini tentang dirinya sendiri, dan itu bukan bukti: salinan yang telah diubah akan berkata apa sahaja yang ditetapkan padanya.",
+  "build.unsigned": "Ini ialah binaan pembangunan. Tiada sesiapa menerbitkannya, dan tiada apa-apa untuk membandingkannya.",
+  "build.modified": "Ini dibina daripada pepohon sumber yang mempunyai perubahan belum diserahkan, jadi ia tidak sepadan dengan mana-mana versi yang diterbitkan.",
+  "build.how_to_verify": "Untuk memastikan muat turun benar-benar apa yang diterbitkan, sahkannya terhadap SHA256SUMS dan tandatangannya. docs/RELEASE.md mempunyai arahannya."
 }

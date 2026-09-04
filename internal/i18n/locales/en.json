@@ -5,7 +5,6 @@
   "severity.attention": "Needs attention",
   "severity.urgent": "Urgent",
   "severity.unknown": "Could not check",
-  "agent.build.unsigned": "This is an unsigned development build.",
   "agent.checks.none": "This build has no diagnostic checks compiled in yet.",
   "agent.checks.available": "%d checks are available on %s.",
   "agent.checks.requires_admin": "needs administrator rights",
@@ -473,5 +472,9 @@
   "ui.remote.open": "A session with %s is recorded as open.",
   "ui.remote.cannot_end": "SupportOne cannot see this session or end it. Closing the remote-help program is what ends it; the button below only closes the record.",
   "ui.remote.mark_ended": "The session is over",
-  "ui.remote.ended": "The session was recorded as ended."
+  "ui.remote.ended": "The session was recorded as ended.",
+  "build.self_reported": "That is what this copy says about itself, which is not proof: a changed copy would say whatever it was changed to say.",
+  "build.unsigned": "This is a development build. Nobody published it, and there is nothing to check it against.",
+  "build.modified": "This was built from a source tree with uncommitted changes, so it does not match any published version.",
+  "build.how_to_verify": "To check a download really is what was published, verify it against SHA256SUMS and its signature. docs/RELEASE.md has the commands."
 }

@@ -6,9 +6,11 @@ SupportOne consolidates ten IT-support functions — diagnostics, safe fixes, gu
 
 ## Status
 
-**Phase 5 of 6 — the snapshot, repairs, explanations, somewhere to send them, and the standards to hold them to.** Fifteen read-only checks, a local web interface, HTML and JSON reports, redaction before anything is saved, three fixes and two guided walkthroughs behind a consent gate, a plain-language explanation of every verdict, an optional model you can point at your own endpoint, a patch statement, a support bundle, an optional fleet server — and now scheduled monthly reports, provisioning profiles, and a consent wrapper in front of remote help.
+**Phase 6 of 6 — everything above, and a release you can check rather than trust.** Fifteen read-only checks, a local web interface, HTML and JSON reports, redaction before anything is saved, three fixes and two guided walkthroughs behind a consent gate, a plain-language explanation of every verdict, an optional model you can point at your own endpoint, a patch statement, a support bundle, an optional fleet server, scheduled monthly reports, provisioning profiles, a consent wrapper in front of remote help — and now a reproducible, signed release with build provenance.
 
-**SupportOne implements no remote desktop protocol and will not.** What Phase 5 adds is the sentence before a session and the record after it. Signing, notarization and the packaged installers are Phase 6 and are **not** in this build.
+**SupportOne implements no remote desktop protocol and will not.** What Phase 5 added is the sentence before a session and the record after it.
+
+Releases are reproducible, signed with Sigstore, and carry SLSA build provenance. They are **not** Authenticode-signed or Apple-notarized, so **Windows SmartScreen and macOS Gatekeeper will warn about them** — see [docs/RELEASE.md](docs/RELEASE.md) for why, and for how to verify a download instead.
 
 | Phase | Contents | State |
 |---|---|---|
@@ -18,7 +20,7 @@ SupportOne consolidates ten IT-support functions — diagnostics, safe fixes, gu
 | 3 | Offline explainer, optional LLM assistant, performance and backup analysis | Complete |
 | 4 | Patch reporter, screenshot-to-ticket, optional fleet server | Complete |
 | 5 | Remote-help consent wrapper, provisioning profiles, scheduled reports | Complete |
-| 6 | Signing, notarization, packaged installers, release automation | Next |
+| 6 | Reproducible release, Sigstore signing, provenance, digest-pinned CI | Complete |
 
 ## What it checks
 
@@ -137,7 +139,26 @@ With no flags it runs the checks and opens its interface in your browser, served
 
 `--fix` prints exactly what will change and then asks you to type the repair's ID. Anything else — `y`, `yes`, a blank line, or nothing at all because the command was run from a script — leaves the computer untouched. Where no restore point can be made, that is a second question with its own answer. If the repair can be undone, the offer to undo it comes straight after, because the record of what was applied lives in the process that applied it.
 
-Builds you make yourself are unsigned development builds, and the agent says so in its own output. Signed, notarized releases are a later deliverable.
+`--version` prints what the build says it is, and then says what that is worth: a version a program prints about itself is not evidence, because a changed copy prints whatever it was changed to print. It points at the check that does mean something.
+
+Builds you make yourself say they are development builds, and a build made from a tree with uncommitted changes says that too rather than quoting a commit hash it does not match.
+
+## Downloading it
+
+Releases carry every artifact, a `SHA256SUMS`, a Sigstore signature over it, and a `BUILD-INFO.txt` naming the commit and the exact Go toolchain that built them.
+
+```sh
+sha256sum -c SHA256SUMS --ignore-missing
+
+cosign verify-blob SHA256SUMS \
+  --signature SHA256SUMS.sig --certificate SHA256SUMS.pem \
+  --certificate-identity-regexp 'https://github.com/ZanOzair/SupportOne/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Or skip trusting this project entirely and rebuild it: `scripts/release.sh` produces byte-identical files from the same commit and toolchain, in any directory, at any time. Every release runs that comparison against itself — one job builds, a second rebuilds from a fresh checkout without being told the first job's answers, and the release fails if they differ.
+
+**These downloads are not Authenticode-signed or Apple-notarized, so your operating system will warn you about them, and it is right to.** Both need a certificate tied to a verified legal identity, which is an annual purchase this project has not made. [docs/RELEASE.md](docs/RELEASE.md) says what that would take, and what to check in the meantime.
 
 ## Working on it
 
@@ -163,6 +184,7 @@ Adding a fix is the same shape, with one extra requirement that is a gate rather
 - [docs/EXPLAINER.md](docs/EXPLAINER.md) — the offline explainer, the optional assistant, and the egress gate
 - [docs/FLEET.md](docs/FLEET.md) — the optional server, why it can only receive, and what it does not protect against
 - [docs/OPERATIONS.md](docs/OPERATIONS.md) — monthly reports, profiles, remote help, and what each deliberately does not do
+- [docs/RELEASE.md](docs/RELEASE.md) — verifying a download, rebuilding it yourself, and exactly what is and is not signed
 - [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) — assets, adversaries, controls, residual risks, non-goals
 
 ## License

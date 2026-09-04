@@ -149,6 +149,24 @@ Both are technician-facing, and neither can change a machine.
 - **A profile cannot apply anything.** Its `offer` field names repairs to suggest, resolved against the compiled-in registry for the platform first. Applying one still goes through the fix consent gate. A file that could repair machines on its own would be dynamic code with extra steps.
 - **A check that did not answer counts against the profile.** Treating "could not check" as conformance would certify machines nobody looked at.
 
+### The release itself
+
+The supply chain runs in both directions: what goes into a build, and what a person downloads.
+
+- **The build is reproducible, and that is checked rather than claimed.** Every release builds the artifacts twice, in two jobs, the second from a fresh checkout without being handed the first's answers, and fails if the bytes differ. Anyone can run the same script and compare; `BUILD-INFO.txt` names the commit, the epoch and the exact Go toolchain, because reproducibility is only meaningful given the same inputs.
+- **Signing is keyless.** Sigstore issues a certificate to the workflow's own identity for the moment it is used, and records the signature in a public transparency log. This project stores no signing key, so it has none to leak, lose, or have taken. A signature made in secret is not a thing that can happen.
+- **Provenance is attested.** A SLSA statement says which workflow, at which commit, produced each archive.
+- **Actions are pinned to commit digests, not tags.** A tag can be moved under you, and an action runs with the same access as the job calling it. Tool versions are pinned exactly, including the Go toolchain, which is a range everywhere except the release path where it must not be.
+- **The binary does not vouch for itself.** `--version` reports what was compiled into it and says so in the same breath: a changed copy reports whatever it was changed to report. Verification comes from outside the file, and the output points there.
+
+Residual risks, stated plainly:
+
+- **Downloads are not Authenticode-signed or Apple-notarized.** SmartScreen and Gatekeeper will warn about them, and they are right to. Both need a certificate tied to a verified legal identity — an annual purchase this project has not made. [RELEASE.md](RELEASE.md) documents what it would take and what to check instead. This is the largest gap in the model and it is a commercial one, not a technical one.
+- **A signature is not a review.** It says these bytes came from this workflow at this commit. It says nothing about whether the code is correct or safe.
+- **Provenance covers the build, not the source.** A bad commit that was merged would be faithfully attested.
+- **Reproducibility does not survive a compromised toolchain.** If the Go distribution itself were backdoored, every rebuild would agree with every other, and all of them would be wrong.
+- **A release depends on GitHub.** The identity that signs is a GitHub Actions OIDC token. Someone who could run workflows in this repository could produce a validly signed release.
+
 ## Non-goals
 
 Naming these honestly is part of the model.
@@ -162,6 +180,8 @@ Naming these honestly is part of the model.
 - **Remote desktop.** SupportOne provides no screen capture, no input injection, and no transport of its own, and will not. It wraps tools that do.
 - **Supervising a remote session.** Once one starts, SupportOne is not part of it and cannot observe, restrict or end it. It records the decision, not the session.
 - **Unattended access.** There is no way to configure a session that begins without somebody present agreeing to it. A remote-help path that can be triggered remotely is a backdoor, whoever installs it.
+- **An operating system that does not warn about the download.** Without a paid, identity-verified certificate, SmartScreen and Gatekeeper will warn, and this project will not tell anyone to click through a security warning as though it were a formality.
+- **Self-verification.** A binary cannot establish its own integrity. The agent says what it is and points at a check that happens outside it.
 
 ## Review
 

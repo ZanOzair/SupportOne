@@ -1,0 +1,244 @@
+name: Release
+
+# What a release is here: the same reproducible build anyone can run, plus
+# evidence that this is what came out of it. Nothing in this workflow can make
+# a binary trustworthy; what it can do is make the binary checkable, and say
+# plainly which checks exist and which do not.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to stamp. A manual run builds and verifies but publishes nothing."
+        required: true
+        default: v0.0.0-dryrun
+
+permissions:
+  contents: read
+
+env:
+  # Pinned to an exact patch, not a range. A release built with a different
+  # Go patch release is a different binary, and these artifacts are meant to
+  # be rebuilt byte for byte by anyone who reads BUILD-INFO.txt.
+  RELEASE_GO_VERSION: "1.24.7"
+  CYCLONEDX_GOMOD_VERSION: v1.12.0
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      # Actions are pinned to commit digests rather than tags: a tag can be
+      # moved, and the release path is where that would matter most.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # git describe needs the tags, and SOURCE_DATE_EPOCH needs the
+          # commit, so a shallow checkout will not do.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.RELEASE_GO_VERSION }}
+          check-latest: false
+
+      - name: Work out what is being built
+        id: version
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build every artifact
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: scripts/release.sh dist
+
+      - name: Generate the CycloneDX SBOM
+        run: |
+          go install "github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@${CYCLONEDX_GOMOD_VERSION}"
+          cyclonedx-gomod mod -json -output "dist/supportone-${{ steps.version.outputs.version }}.cdx.json"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-artifacts
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  reproducible:
+    name: Rebuild and compare
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.RELEASE_GO_VERSION }}
+          check-latest: false
+
+      # Deliberately not handed the first build's SOURCE_DATE_EPOCH: this job
+      # derives everything from the commit exactly as a stranger would, so a
+      # match here means the recipe reproduces, not that two runs were told
+      # the same answers.
+      - name: Build it again, independently
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: scripts/release.sh rebuilt
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-artifacts
+          path: original
+
+      - name: The two builds must be identical
+        run: |
+          if diff -u original/SHA256SUMS rebuilt/SHA256SUMS; then
+            echo "Two independent builds of this commit produced identical bytes."
+            exit 0
+          fi
+          echo
+          echo "The same commit built twice produced different files."
+          echo "That means something in the build depends on where or when it ran,"
+          echo "and the reproducibility this release claims would not be true."
+          exit 1
+
+  release:
+    name: Sign and publish
+    needs: [build, reproducible]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release
+      id-token: write # keyless signing and provenance, no stored key
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-artifacts
+          path: dist
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+
+      # Keyless: the certificate is issued to this workflow's own identity for
+      # the minute it is used, and the signature is recorded in a public
+      # transparency log. There is no key for this project to store, lose, or
+      # have taken — which is the whole reason to prefer it.
+      #
+      # Signing SHA256SUMS rather than each file signs all of them: the
+      # checksums cover the artifacts, and one signature covers the checksums.
+      - name: Sign the checksums
+        run: |
+          cd dist
+          cosign sign-blob --yes \
+            --output-signature SHA256SUMS.sig \
+            --output-certificate SHA256SUMS.pem \
+            SHA256SUMS
+
+      # SLSA provenance: a signed statement of which workflow, at which commit,
+      # produced these exact bytes. Verifiable with `gh attestation verify`.
+      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-path: "dist/*.tar.gz, dist/*.zip"
+
+      # Authenticode and Apple notarization are what stop Windows SmartScreen
+      # and macOS Gatekeeper warning a person off. Both need a certificate
+      # tied to a verified identity, which is a purchase this repository has
+      # not made, so neither runs. This step exists to say that out loud in
+      # the job log rather than leaving a reader to notice the absence.
+      # Authenticode and Apple notarization are what stop Windows SmartScreen
+      # and macOS Gatekeeper warning a person off. Both need a certificate
+      # tied to a verified identity, which is a purchase this repository has
+      # not made, so neither runs and neither is written: an untested signing
+      # command in the release path is worse than an honest gap. This step
+      # says which of the four checks exist, in the log and in the job
+      # summary, rather than leaving a reader to notice the absence.
+      - name: Report what is signed and what is not
+        env:
+          HAS_WINDOWS_CERT: ${{ secrets.WINDOWS_SIGNING_CERT != '' }}
+          HAS_APPLE_ID: ${{ secrets.APPLE_DEVELOPER_ID != '' }}
+        run: |
+          {
+            echo "### What this release is signed with"
+            echo
+            echo "| Check | Present |"
+            echo "|---|---|"
+            echo "| Sigstore keyless signature over SHA256SUMS | yes |"
+            echo "| SLSA build provenance | yes |"
+            echo "| Windows Authenticode | no |"
+            echo "| Apple notarization | no |"
+            echo
+            echo "SmartScreen and Gatekeeper will warn about these files."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${HAS_WINDOWS_CERT}" = "true" ] || [ "${HAS_APPLE_ID}" = "true" ]; then
+            # Not a failure — that would block a release over a secret someone
+            # added in good faith. But it must not pass unremarked either: a
+            # certificate configured and unused is a false sense of signing.
+            echo "::warning::A signing credential is configured but no step uses it. These artifacts are NOT Authenticode-signed or notarized. See docs/RELEASE.md."
+          fi
+
+      - name: Publish the release
+        if: needs.build.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          cat > notes.md <<'NOTES'
+          ## Verifying this download
+
+          Every file here is listed in `SHA256SUMS`, and `SHA256SUMS` is signed.
+
+          ```sh
+          sha256sum -c SHA256SUMS --ignore-missing
+
+          cosign verify-blob SHA256SUMS \
+            --signature SHA256SUMS.sig \
+            --certificate SHA256SUMS.pem \
+            --certificate-identity-regexp 'https://github.com/ZanOzair/SupportOne/.*' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          ```
+
+          `BUILD-INFO.txt` names the commit and the exact Go toolchain, so you can
+          rebuild these files yourself and compare. Two independent builds were
+          already compared in this release's own workflow; if yours differs, please
+          say so publicly.
+
+          ## What is signed, and what is not
+
+          | | |
+          |---|---|
+          | Sigstore keyless signature over the checksums | yes |
+          | SLSA build provenance | yes |
+          | Windows Authenticode | **no** |
+          | Apple notarization | **no** |
+
+          The last two need a certificate tied to a verified identity, which this
+          project has not bought. **Windows SmartScreen and macOS Gatekeeper will
+          warn you about these files, and they are right to** — an unsigned binary
+          from the internet is exactly what those warnings are for. Verify the
+          checksums and the signature above before deciding to trust it.
+          NOTES
+
+          gh release create "${VERSION}" \
+            --title "SupportOne ${VERSION}" \
+            --notes-file notes.md \
+            dist/*
+
+      - name: Say why nothing was published
+        if: needs.build.outputs.publish != 'true'
+        run: |
+          echo "This was a manual run, so it built, rebuilt, compared and signed,"
+          echo "but published nothing. Push a tag to publish."
