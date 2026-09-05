@@ -39,6 +39,19 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      # 32-bit is where word-size assumptions surface, and nobody develops on
+      # it: an int that overflows or a kernel field that is int32 there and
+      # int64 here compiles fine on the machine you are sitting at and not at
+      # all on the machine a user has. Both of those had already happened by
+      # the time this step was added.
+      - name: Vet on 32-bit targets
+        if: runner.os == 'Linux'
+        run: |
+          for target in linux/386 linux/arm windows/386; do
+            echo "vet ${target}"
+            GOOS="${target%/*}" GOARCH="${target#*/}" go vet ./...
+          done
+
       - name: Test (race)
         if: runner.os == 'Linux'
         run: go test -race -coverprofile=coverage.out -covermode=atomic ./...

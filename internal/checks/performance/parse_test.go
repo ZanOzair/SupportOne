@@ -108,12 +108,19 @@ Pages wired down:                        150000.
 }
 
 func TestParseSwapUsage(t *testing.T) {
+	// Typed uint64 rather than untyped constants: 2048 MiB overflows a 32-bit
+	// int, so the untyped form does not compile for a 32-bit target at all.
+	const (
+		wantTotal uint64 = 2048 << 20
+		wantUsed  uint64 = 512 << 20
+	)
+
 	total, used := parseSwapUsage([]byte("total = 2048.00M  used = 512.00M  free = 1536.00M  (encrypted)\n"))
-	if total != 2048*(1<<20) {
-		t.Errorf("total = %d, want %d", total, 2048*(1<<20))
+	if total != wantTotal {
+		t.Errorf("total = %d, want %d", total, wantTotal)
 	}
-	if used != 512*(1<<20) {
-		t.Errorf("used = %d, want %d", used, 512*(1<<20))
+	if used != wantUsed {
+		t.Errorf("used = %d, want %d", used, wantUsed)
 	}
 
 	// A machine with swap disabled reports zeros, not an error.

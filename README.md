@@ -74,9 +74,20 @@ A profile **measures and never changes**. Its `offer` field names repairs to sug
 
 This is the honest scope. It is not "works everywhere".
 
-- **Windows 10/11** — the primary target. Every check runs here.
+- **Windows 10/11** — the primary target. Every check runs here. Built for 64-bit, ARM64 and 32-bit.
+- **Windows 8.1 and earlier, including Windows 7** — **not supported.** Go 1.24 sets the floor at Windows 10, and no build of this release will start on an older one. That is a hard limit, not a gap to work around.
 - **macOS and Linux** — the same codebase and the same interfaces, with platform-specific implementations. A check that cannot exist on a platform is not offered there and the report says so: `drivers.problem` is Windows-only, because neither macOS nor Linux has an equivalent notion of a device in an error state.
 - **Phones, tablets, Chromebooks, any browser** — can reach the web interface if the user explicitly enables access beyond loopback. **The agent itself requires a desktop OS**: Windows, macOS, or Linux. That distinction is what "works everywhere" honestly means here.
+
+Nine builds of the agent ship with each release, so most desktop hardware still in use is covered:
+
+| | |
+|---|---|
+| Windows | `amd64`, `arm64`, `386` — Windows 10 or newer |
+| macOS | `amd64` (Intel), `arm64` (Apple silicon) — macOS 12 or newer |
+| Linux | `amd64`, `arm64`, `386`, `arm` (ARMv6+, so a Raspberry Pi Zero upward) — kernel 3.2 or newer |
+
+The floors in that table come from the Go toolchain, not from choices this project made, and they are stated rather than left for someone to discover when nothing happens.
 - **Firmware** — firmware and BIOS details are read where the operating system exposes them. Nothing is ever flashed or modified.
 
 Some answers need administrator rights on some platforms — SMART attributes on Linux, BitLocker status on Windows. The agent does not require elevation to start; a check that could not read something reports that it could not, and names why.

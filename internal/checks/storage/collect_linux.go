@@ -97,7 +97,11 @@ func collectDisks(ctx context.Context, run platform.Runner) ([]disk, error) {
 // nonNegative converts a signed block size from the kernel. A negative value
 // cannot happen, and turning one into a huge unsigned number would report a
 // fictional drive size, so it becomes zero and the volume reads as unmeasured.
-func nonNegative(v int64) uint64 {
+// It is generic over both widths because Statfs_t.Bsize is int64 on a 64-bit
+// kernel and int32 on a 32-bit one. Converting at the call site would compile
+// on both but read as a redundant cast on the machine most people build on,
+// and 32-bit is exactly where a disk-space check earns its keep.
+func nonNegative[T int32 | int64](v T) uint64 {
 	if v < 0 {
 		return 0
 	}

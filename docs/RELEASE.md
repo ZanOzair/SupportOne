@@ -163,12 +163,14 @@ signs, and publishes nothing.
 
 | File | What it is |
 |---|---|
-| `supportone-agent-<version>-<os>-<arch>.{tar.gz,zip}` | The agent, for all six targets |
+| `supportone-agent-<version>-<os>-<arch>.{tar.gz,zip}` | The agent, for all nine targets |
 | `supportone-server-<version>-linux-<arch>.tar.gz` | The optional fleet server |
 | `SHA256SUMS` | Every file above, hashed |
 | `SHA256SUMS.sig`, `SHA256SUMS.pem` | The Sigstore signature and its certificate |
 | `BUILD-INFO.txt` | Commit, epoch and toolchain: what you need to rebuild it |
 | `supportone-<version>.cdx.json` | CycloneDX SBOM |
+
+Every agent archive carries a `START-HERE.txt` written for somebody who has never opened a terminal: what to double-click, what the operating system's warning means, and how to check the file's hash rather than clicking past the warning on trust.
 
 The fleet server is built for Linux only. It is a thing you host, its supported
 path is the container image in `compose.yaml`, and a Windows or macOS build of

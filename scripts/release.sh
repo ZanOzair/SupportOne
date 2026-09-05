@@ -75,8 +75,17 @@ fi
 
 # --- targets -----------------------------------------------------------------
 
-# The agent is what a person downloads, so it is built for everything.
-agent_targets="windows/amd64 windows/arm64 darwin/amd64 darwin/arm64 linux/amd64 linux/arm64"
+# The agent is what a person downloads, so it is built for everything this
+# toolchain can reach — including the 32-bit machines that are exactly the ones
+# most likely to be short of disk space and in need of a look.
+#
+# What this does not reach is documented rather than glossed over: Go 1.24 sets
+# the floor at Windows 10, macOS 12 and Linux with kernel 3.2. A Windows 7
+# machine cannot run this build at any architecture, and no amount of extra
+# targets changes that.
+agent_targets="windows/amd64 windows/arm64 windows/386
+               darwin/amd64 darwin/arm64
+               linux/amd64 linux/arm64 linux/386 linux/arm"
 
 # The fleet server is optional, self-hosted, and its supported path is the
 # container image. These two archives exist for someone who would rather run
@@ -91,6 +100,176 @@ echo "SupportOne ${VERSION} (${commit})"
 echo "build date ${build_date} (SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH})"
 echo
 
+# start_here writes the first thing a non-technical person should read.
+#
+# The operating system is going to warn them about this file, because it is not
+# signed by a certificate authority. That warning is correct, and telling
+# someone to click past it without saying why would be teaching them the exact
+# habit that gets people compromised. So this explains what the warning means,
+# and gives them a check that is stronger than the signature would have been.
+start_here() {
+  cmd=$1 goos=$2
+
+  cat <<HEADER
+SupportOne ${VERSION}
+=====================
+
+What this is: one program that looks at this computer and explains, in plain
+language, what it finds. It changes nothing unless you ask it to, and it sends
+nothing anywhere unless you click to send it.
+
+HEADER
+
+  if [ "$cmd" = "supportone-server" ]; then
+    cat <<'SERVER'
+This is the OPTIONAL fleet server, for a technician who wants a dashboard of
+machines that chose to report to them. It is not the program an ordinary user
+runs -- that is supportone-agent.
+
+  1. Set a secret of at least 24 characters:
+
+       export SUPPORTONE_FLEET_TOKEN='...'
+
+  2. Run it:
+
+       ./supportone-server
+
+It refuses to start without that token, because a fleet server without one is
+a list of other people's machines served to anyone who asks.
+SERVER
+    return
+  fi
+
+  case "$goos" in
+    windows)
+      cat <<'WINDOWS'
+TO RUN IT
+---------
+
+  1. Double-click supportone-agent.exe
+
+  2. Windows will say "Windows protected your PC" and
+     "Microsoft Defender SmartScreen prevented an unrecognized app from
+     starting."
+
+     This is EXPECTED, and the warning is telling you the truth: this program
+     is not signed by a certificate authority, so Windows does not know who
+     wrote it. Please do not get in the habit of clicking past these.
+
+     Check it instead. Open PowerShell and run:
+
+       Get-FileHash .\supportone-agent.exe -Algorithm SHA256
+
+     Compare what it prints against the SHA256SUMS file published with this
+     download at:
+
+       https://github.com/ZanOzair/SupportOne/releases
+
+     If it matches, this is exactly the file the project's build produced, and
+     you have verified that yourself rather than trusting anybody's word for
+     it. That is a stronger check than a signature.
+
+  3. Then click "More info" and "Run anyway". Windows only asks once.
+
+  4. A black window opens, the checks run for about half a minute, and your
+     browser opens by itself showing the results.
+
+If the browser does not open, the black window prints an address starting with
+http://127.0.0.1 -- copy that into your browser. That address is on this
+computer only; nothing on the internet can reach it.
+
+To stop it: close the black window, or press Ctrl+C in it. It also shuts
+itself down after a while unused.
+WINDOWS
+      ;;
+    darwin)
+      cat <<'MACOS'
+TO RUN IT
+---------
+
+  1. Open Terminal, and drag the supportone-agent file into the window, then
+     press Enter.
+
+  2. macOS will refuse, saying the developer cannot be verified. This is
+     EXPECTED: this program is not notarized by Apple, so Gatekeeper does not
+     know who wrote it. The warning is correct, and clicking past warnings is
+     a bad habit to build.
+
+     Check it instead. In Terminal, in this folder:
+
+       shasum -a 256 supportone-agent
+
+     Compare that against the SHA256SUMS file published with this download at:
+
+       https://github.com/ZanOzair/SupportOne/releases
+
+     If it matches, this is exactly the file the project's build produced, and
+     you verified it yourself rather than trusting anyone.
+
+  3. Then: System Settings -> Privacy & Security, scroll down, and click
+     "Open Anyway" next to the message about supportone-agent. macOS only
+     asks once.
+
+  4. The checks run for about half a minute and your browser opens by itself.
+
+If the browser does not open, Terminal prints an address starting with
+http://127.0.0.1 -- copy that into your browser. That address is on this
+computer only; nothing on the internet can reach it.
+
+To stop it: press Ctrl+C in Terminal. It also shuts itself down after a while
+unused.
+MACOS
+      ;;
+    *)
+      cat <<'LINUX'
+TO RUN IT
+---------
+
+  1. Open a terminal in this folder and run:
+
+       chmod +x supportone-agent
+       ./supportone-agent
+
+  2. Before that, if you want to check the file is what the project published:
+
+       sha256sum supportone-agent
+
+     and compare it against the SHA256SUMS file published with this download
+     at https://github.com/ZanOzair/SupportOne/releases
+
+  3. The checks run for about half a minute and your browser opens by itself.
+
+On a machine with no desktop, use:
+
+       ./supportone-agent --text
+
+which prints the whole report to the terminal instead.
+
+The web address it prints starts with http://127.0.0.1 and is on this computer
+only; nothing on the internet can reach it. Press Ctrl+C to stop.
+LINUX
+      ;;
+  esac
+
+  cat <<'FOOTER'
+
+WHAT IT WILL NOT DO
+-------------------
+
+  * It does not change anything without describing the change first and
+    waiting for you to confirm that exact change.
+  * It does not send anything anywhere unless you click to send it, and it
+    shows you the exact contents first.
+  * It has no telemetry, no analytics and no crash reporting. Not switched
+    off -- not present.
+  * It keeps a plain-text log of everything it did, which you can open in any
+    text editor. The program tells you where.
+
+Full documentation: https://github.com/ZanOzair/SupportOne
+Reporting a security problem: see SECURITY.md in that repository.
+FOOTER
+}
+
 # build_one <command> <goos> <goarch>
 build_one() {
   cmd=$1 goos=$2 goarch=$3
@@ -100,6 +279,12 @@ build_one() {
 
   stage="${out}/stage/${cmd}-${VERSION}-${goos}-${goarch}"
   mkdir -p "$stage"
+
+  # GOARM=6 rather than the default 7: it runs on every ARMv6 board as well as
+  # newer ones, and a diagnostic tool is worth more running everywhere than
+  # running slightly faster somewhere.
+  goarm=""
+  [ "$goarch" = "arm" ] && goarm=6
 
   # -trimpath removes the building machine's paths from the binary; without it
   # the same source built in two directories produces two different files.
@@ -111,14 +296,16 @@ build_one() {
   # dirty, from one invocation. The commit is stamped explicitly below, from
   # git, once — so the ambient stamp is redundant here and only ever a way for
   # the output to depend on when it ran.
-  CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" GOTOOLCHAIN=local \
+  CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" GOARM="$goarm" GOTOOLCHAIN=local \
     go build -trimpath -buildvcs=false \
       -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${commit} -X main.buildDate=${build_date}" \
       -o "${stage}/${cmd}${suffix}" "./cmd/${cmd}"
 
-  # What a person needs beside the program: the licence, and the document that
-  # says what the thing does.
+  # What a person needs beside the program: the licence, the document that says
+  # what the thing does, and — for anyone who has never opened a terminal — one
+  # page telling them what to click.
   cp LICENSE README.md "$stage/"
+  start_here "$cmd" "$goos" > "${stage}/START-HERE.txt"
 
   # Every timestamp in the archive comes from the commit, not from when this
   # ran. Directories too, or their mtimes leak the build time.
