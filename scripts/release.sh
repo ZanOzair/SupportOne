@@ -225,15 +225,17 @@ TO RUN IT FROM HERE
 
   3. Then click "More info" and "Run anyway". Windows only asks once.
 
-  4. A black window opens, the checks run for about half a minute, and your
-     browser opens by itself showing the results.
+  4. Nothing seems to happen for about half a minute -- that is the checks
+     running -- and then your browser opens by itself showing the results.
+     There is no terminal window; SupportOne is a normal Windows program.
 
-If the browser does not open, the black window prints an address starting with
-http://127.0.0.1 -- copy that into your browser. That address is on this
-computer only; nothing on the internet can reach it.
+If your browser does not open, SupportOne shows you the address in a small
+window instead. It starts with http://127.0.0.1 and works on this computer
+only; nothing on the internet can reach it.
 
-To stop it: close the black window, or press Ctrl+C in it. It also shuts
-itself down after a while unused.
+To stop it: click Close in the page. It also shuts itself down after a while
+unused. If you would rather watch what it is doing, open a Command Prompt and
+run it from there -- it prints to the prompt when started that way.
 WINDOWS
       ;;
     darwin)
@@ -372,6 +374,16 @@ build_one() {
   # page in Explorer and tells Properties nothing about itself. Both come from
   # a resource object compiled here and linked by the Go toolchain, which picks
   # it up from the command's own directory by its GOOS/GOARCH suffix.
+  # The Windows agent is linked as a GUI program, so double-clicking it opens
+  # the interface without a black terminal window behind it. It borrows the
+  # console of whatever started it at run time, so --text and --version still
+  # print when a technician runs it from a prompt. The fleet server keeps its
+  # console: it is a daemon somebody watches the output of.
+  subsystem=""
+  if [ "$goos" = "windows" ] && [ "$cmd" = "supportone-agent" ]; then
+    subsystem=" -H windowsgui"
+  fi
+
   syso=""
   if [ "$goos" = "windows" ]; then
     syso="cmd/${cmd}/resource_windows_${goarch}.syso"
@@ -390,7 +402,7 @@ build_one() {
 
   CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" GOARM="$goarm" GOTOOLCHAIN=local \
     go build -trimpath -buildvcs=false \
-      -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${commit} -X main.buildDate=${build_date}" \
+      -ldflags "-s -w${subsystem} -X main.version=${VERSION} -X main.commit=${commit} -X main.buildDate=${build_date}" \
       -o "${stage}/${cmd}${suffix}" "./cmd/${cmd}"
 
   # What a person needs beside the program: the licence, the document that says

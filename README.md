@@ -151,6 +151,8 @@ With no flags it runs the checks and opens its interface in your browser, served
 
 `--fix` prints exactly what will change and then asks you to type the repair's ID. Anything else — `y`, `yes`, a blank line, or nothing at all because the command was run from a script — leaves the computer untouched. Where no restore point can be made, that is a second question with its own answer. If the repair can be undone, the offer to undo it comes straight after, because the record of what was applied lives in the process that applied it.
 
+On Windows the agent is a GUI program: double-clicking it opens the interface with no terminal window behind it. Run from a Command Prompt it borrows that prompt's console, so `--text`, `--json` and `--version` still print where you can read them. If it cannot open a browser it shows the address in a window rather than failing silently.
+
 `--version` prints what the build says it is, and then says what that is worth: a version a program prints about itself is not evidence, because a changed copy prints whatever it was changed to print. It points at the check that does mean something.
 
 Builds you make yourself say they are development builds, and a build made from a tree with uncommitted changes says that too rather than quoting a commit hash it does not match.

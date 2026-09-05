@@ -35,6 +35,11 @@ import (
 	agentui "github.com/ZanOzair/SupportOne/web/agent-ui"
 )
 
+// hasConsole records whether there is a terminal to print to. It is false only
+// for a Windows build somebody launched from the desktop, where anything the
+// agent needs to say has to be said in a window instead.
+var hasConsole = true
+
 // Build metadata, set via -ldflags at release time. An unset version means an
 // unsigned local build, and the agent says so rather than implying a release.
 var (
@@ -93,6 +98,15 @@ type options struct {
 }
 
 func main() {
+	// On Windows the agent is linked as a GUI program so that double-clicking
+	// it does not open a black terminal window nobody asked for. That would
+	// also throw away everything --text, --json and --version print, so the
+	// first thing it does is borrow the console of whatever started it. There
+	// is one when a terminal did; there is not when Explorer did, and that is
+	// how the two cases tell themselves apart. Everywhere else this is always
+	// true and costs nothing.
+	hasConsole = platform.AttachConsole()
+
 	if err := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintf(os.Stderr, "supportone-agent: %v\n", err)
 		os.Exit(1)
@@ -378,6 +392,17 @@ func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform
 			// A machine with no desktop session still gets a usable agent:
 			// the address is already printed above.
 			fmt.Fprintf(w, "Could not open a browser (%v). Open the address above yourself.\n", err)
+
+			// Unless there is nowhere to print it. A double-clicked agent has
+			// no terminal, so a failure to open the browser would look like
+			// the program doing nothing at all. The address has to reach the
+			// person some other way, or the agent is running for nobody.
+			if !hasConsole {
+				_ = platform.ShowMessage("SupportOne", fmt.Sprintf(
+					"SupportOne is running, but it could not open your browser.\n\n"+
+						"Open this address yourself:\n\n%s\n\n"+
+						"That address works on this computer only.", server.URL()))
+			}
 		}
 	}
 	return server.Serve(ctx)
