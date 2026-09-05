@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Draw the SupportOne icon and write it as .ico and .png.
 
-The icon is generated rather than committed as a binary blob so that it can be
-read, reviewed and changed like anything else in this repository: a colour is a
-hex string on a line, not a pixel someone has to open an image editor to find.
+The icon's *source* is this script rather than a file only an image editor can
+open: a colour is a hex string on a line, and changing the mark means changing
+code that someone can read in a diff.
+
+Its output is committed alongside it, which is the deliberate trade. A release
+build that regenerated the icons would take the local zlib's compression
+behaviour as an input, and every published hash would then depend on which
+machine built it — the one thing the reproducibility gate exists to prevent.
+So the pixels are checked in, and re-running this script is how they change.
 
 The mark is a pulse trace on a rounded square. It says "this thing checks
 whether something is healthy", which is what the program does, and it survives
@@ -25,7 +31,15 @@ PULSE = [
     (0.50, 0.78), (0.61, 0.38), (0.70, 0.50), (0.94, 0.50),
 ]
 
-SIZES = [16, 24, 32, 48, 64, 128, 256]
+SIZES = [16, 24, 32, 48, 64, 128, 256, 512]
+
+# The Apple icon container takes the same PNGs under four-character type codes,
+# each of which means one specific pixel size.
+ICNS_TYPES = {16: b"icp4", 32: b"icp5", 64: b"icp6",
+              128: b"ic07", 256: b"ic08", 512: b"ic09"}
+
+# The sizes a Linux desktop looks for under the hicolor theme.
+FREEDESKTOP_SIZES = [16, 24, 32, 48, 64, 128, 256, 512]
 
 
 def rounded_rect_distance(x, y, half_w, half_h, radius):
@@ -136,19 +150,50 @@ def ico(images):
     return struct.pack("<HHH", 0, 1, count) + directory + body
 
 
+def icns(images):
+    """Wrap PNG images in an Apple icon container.
+
+    macOS has read PNG payloads in these types since 10.7, which is far below
+    this project's floor of macOS 12."""
+    body = b""
+    for size, data in images:
+        kind = ICNS_TYPES.get(size)
+        if kind is None:
+            continue
+        body += kind + struct.pack(">I", len(data) + 8) + data
+
+    return b"icns" + struct.pack(">I", len(body) + 8) + body
+
+
 def main():
+    import os
+
+    os.makedirs("build/windows", exist_ok=True)
+    os.makedirs("build/macos", exist_ok=True)
+    os.makedirs("build/linux/icons", exist_ok=True)
+
     images = []
     for size in SIZES:
         data = png(size, render(size))
         images.append((size, data))
+
+        # A Linux desktop wants one file per size under the hicolor theme.
+        if size in FREEDESKTOP_SIZES:
+            with open(f"build/linux/icons/{size}.png", "wb") as f:
+                f.write(data)
         if size == 256:
             with open("build/windows/supportone.png", "wb") as f:
                 f.write(data)
 
     with open("build/windows/supportone.ico", "wb") as f:
         f.write(ico(images))
+    with open("build/macos/supportone.icns", "wb") as f:
+        f.write(icns(images))
 
     print(f"wrote {len(images)} sizes: {', '.join(str(s) for s, _ in images)}")
+    print("  build/windows/supportone.ico")
+    print("  build/macos/supportone.icns")
+    print(f"  build/linux/icons/*.png ({len(FREEDESKTOP_SIZES)} files)")
 
 
 if __name__ == "__main__":

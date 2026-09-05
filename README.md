@@ -157,11 +157,19 @@ Builds you make yourself say they are development builds, and a build made from 
 
 ## Installing it
 
+| Platform | Install with |
+|---|---|
+| **Windows** | `SupportOne-Setup-<version>-amd64.exe` — Start Menu entry, optional desktop icon, uninstaller |
+| **macOS** | the `darwin` archive, which contains `SupportOne.app` — drag it to Applications |
+| **Debian / Ubuntu / Mint** | `sudo apt install ./supportone_<version>_amd64.deb` — applications menu entry and icon |
+
 On Windows, download **`SupportOne-Setup-<version>-amd64.exe`** from the [latest release](https://github.com/ZanOzair/SupportOne/releases) and run it. SupportOne lands in the Start Menu with an optional desktop icon, and appears in Settings → Apps so it can be removed the ordinary way. It installs for the current user only and asks for no administrator rights — the program does not need them to look at a computer, and an installer that demanded them would be the first thing contradicting that.
 
-The `.zip` and `.tar.gz` archives are the same program without an installer, for anyone who would rather unpack it themselves. Each carries a `START-HERE.txt` written for someone who has never opened a terminal.
+On macOS the archive contains a real application bundle with its icon, so it behaves like any other app in Finder and Launchpad. On Debian-family Linux the package installs the binary, a `.desktop` entry and the icon set, so SupportOne appears in the applications menu and `apt remove supportone` takes it away again.
 
-**Windows will still warn you about the installer**, because it is not signed by a certificate authority. That warning is correct and the release notes explain how to verify the download instead of clicking past it.
+The `.zip` and `.tar.gz` archives are the same program without an installer, for anyone who would rather unpack it themselves. Each carries a `START-HERE.txt` written for someone who has never opened a terminal, and the Linux archives include a `desktop-integration/` folder for a menu entry without the package.
+
+**Windows and macOS will still warn you**, because nothing here is signed by a certificate authority or notarized by Apple. Those warnings are correct, and the release notes explain how to verify the download instead of clicking past them. No amount of packaging changes that — only a paid, identity-verified certificate does.
 
 ## Downloading it
 

@@ -164,12 +164,15 @@ signs, and publishes nothing.
 | File | What it is |
 |---|---|
 | `SupportOne-Setup-<version>-<arch>.exe` | Windows installer: Start Menu entry, optional desktop icon, uninstaller. Per-user, no admin |
+| `supportone_<version>_<arch>.deb` | Debian-family package: binary, desktop entry, icon set |
 | `supportone-agent-<version>-<os>-<arch>.{tar.gz,zip}` | The agent, for all nine targets |
 | `supportone-server-<version>-linux-<arch>.tar.gz` | The optional fleet server |
 | `SHA256SUMS` | Every file above, hashed |
 | `SHA256SUMS.sig`, `SHA256SUMS.pem` | The Sigstore signature and its certificate |
 | `BUILD-INFO.txt` | Commit, epoch and toolchain: what you need to rebuild it |
 | `supportone-<version>.cdx.json` | CycloneDX SBOM |
+
+The macOS archives contain a real `SupportOne.app` bundle — a directory with a plist, the binary and an `.icns`, which needs no Apple tooling to assemble. The Linux archives carry a `desktop-integration/` folder with the same `.desktop` file and icons the `.deb` installs, for anyone unpacking by hand.
 
 The Windows binaries carry an embedded icon and version metadata, generated from `build/icon.py` and `build/windows/versioninfo.json` rather than committed as opaque blobs — the icon is drawn by a script anyone can read and change. The installer is NSIS, built on Linux, and its output is byte-identical between builds, so it is covered by the same reproducibility gate as everything else.
 

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=SupportOne
+GenericName=Computer health check
+Comment=Reads this computer and explains in plain language what it finds
+Exec=supportone-agent
+Icon=supportone
+Terminal=false
+Categories=System;Monitor;Utility;
+Keywords=diagnostics;health;support;repair;report;
+StartupNotify=true

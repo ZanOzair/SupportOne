@@ -1,0 +1,15 @@
+Package: supportone
+Version: __VERSION__
+Section: utils
+Priority: optional
+Architecture: __ARCH__
+Maintainer: SupportOne <noreply@github.com>
+Homepage: https://github.com/ZanOzair/SupportOne
+Description: Reads this computer and explains what it finds
+ SupportOne looks at a computer and reports its health in plain language:
+ disk space, memory, security posture, updates, startup programs and more.
+ .
+ It is read-only by default. It changes nothing without describing the exact
+ change and waiting for confirmation, every repair it offers has a working
+ undo, and it makes no outbound connection unless someone clicks to send
+ something. There is no telemetry.

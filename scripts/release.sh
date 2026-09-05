@@ -84,6 +84,12 @@ command -v makensis >/dev/null 2>&1 || {
   exit 1
 }
 
+command -v dpkg-deb >/dev/null 2>&1 || {
+  echo "error: dpkg-deb is required to build the Linux packages" >&2
+  echo "       Debian/Ubuntu: it ships with dpkg; elsewhere: apt-get install dpkg" >&2
+  exit 1
+}
+
 # The checksum tool is resolved once, as a command rather than a shell
 # function, so the pipeline below can hand it a list of files.
 if command -v sha256sum >/dev/null 2>&1; then
@@ -235,8 +241,7 @@ WINDOWS
 TO RUN IT
 ---------
 
-  1. Open Terminal, and drag the supportone-agent file into the window, then
-     press Enter.
+  1. Drag SupportOne.app into your Applications folder, then double-click it.
 
   2. macOS will refuse, saying the developer cannot be verified. This is
      EXPECTED: this program is not notarized by Apple, so Gatekeeper does not
@@ -245,9 +250,10 @@ TO RUN IT
 
      Check it instead. In Terminal, in this folder:
 
-       shasum -a 256 supportone-agent
+       shasum -a 256 SupportOne.app/Contents/MacOS/supportone-agent
 
-     Compare that against the SHA256SUMS file published with this download at:
+     Compare the .tar.gz you downloaded against the SHA256SUMS file published
+     with it at:
 
        https://github.com/ZanOzair/SupportOne/releases
 
@@ -255,8 +261,7 @@ TO RUN IT
      you verified it yourself rather than trusting anyone.
 
   3. Then: System Settings -> Privacy & Security, scroll down, and click
-     "Open Anyway" next to the message about supportone-agent. macOS only
-     asks once.
+     "Open Anyway" next to the message about SupportOne. macOS only asks once.
 
   4. The checks run for about half a minute and your browser opens by itself.
 
@@ -270,13 +275,32 @@ MACOS
       ;;
     *)
       cat <<'LINUX'
-TO RUN IT
----------
+THE EASIER WAY
+--------------
+
+On Debian, Ubuntu, Mint or anything else using .deb packages, there is a
+supportone_..._amd64.deb next to this download on the releases page:
+
+    sudo apt install ./supportone_1.0.0_amd64.deb
+
+That puts SupportOne in your applications menu with an icon, and
+"sudo apt remove supportone" takes it away again.
+
+TO RUN IT FROM HERE
+-------------------
 
   1. Open a terminal in this folder and run:
 
        chmod +x supportone-agent
        ./supportone-agent
+
+     To get a menu entry without installing the package, copy the two things
+     in desktop-integration/ into place:
+
+       mkdir -p ~/.local/share/applications ~/.local/share/icons/hicolor/256x256/apps
+       cp desktop-integration/supportone.desktop ~/.local/share/applications/
+       cp desktop-integration/icons/256.png \
+          ~/.local/share/icons/hicolor/256x256/apps/supportone.png
 
   2. Before that, if you want to check the file is what the project published:
 
@@ -375,6 +399,30 @@ build_one() {
   cp LICENSE README.md "$stage/"
   start_here "$cmd" "$goos" > "${stage}/START-HERE.txt"
 
+  # macOS shows a bare binary as a blank document that opens a terminal. An
+  # application bundle is what makes it a double-clickable program with an
+  # icon in Finder and Launchpad — and a bundle is only a directory with a
+  # plist in it, so this needs no Apple tooling.
+  if [ "$goos" = "darwin" ] && [ "$cmd" = "supportone-agent" ]; then
+    app="${stage}/SupportOne.app"
+    mkdir -p "${app}/Contents/MacOS" "${app}/Contents/Resources"
+    mv "${stage}/${cmd}" "${app}/Contents/MacOS/supportone-agent"
+    cp build/macos/supportone.icns "${app}/Contents/Resources/"
+    sed "s|__VERSION__|$(numeric_version "$VERSION")|g" \
+      build/macos/Info.plist.template > "${app}/Contents/Info.plist"
+    printf 'APPL????' > "${app}/Contents/PkgInfo"
+  fi
+
+  # A Linux desktop finds programs through a .desktop file and an icon in the
+  # hicolor theme. Shipping both in the archive means someone who unpacks it
+  # by hand can still get a menu entry, and the .deb below installs the same
+  # two files to the same places.
+  if [ "$goos" = "linux" ] && [ "$cmd" = "supportone-agent" ]; then
+    mkdir -p "${stage}/desktop-integration"
+    cp build/linux/supportone.desktop "${stage}/desktop-integration/"
+    cp -r build/linux/icons "${stage}/desktop-integration/"
+  fi
+
   # Every timestamp in the archive comes from the commit, not from when this
   # ran. Directories too, or their mtimes leak the build time.
   find "$stage" -exec touch -h -d "@${SOURCE_DATE_EPOCH}" {} +
@@ -415,7 +463,57 @@ build_one() {
       -C "${out}/stage" -cf - "$archive_base" \
       | gzip -n -9 > "${out}/${archive_base}.tar.gz"
     echo "  ${archive_base}.tar.gz"
+
+    if [ "$goos" = "linux" ] && [ "$cmd" = "supportone-agent" ]; then
+      build_deb "$goarch" "$stage"
+    fi
   fi
+}
+
+# build_deb turns one staged Linux build into an installable package.
+#
+# It is the same shape as the Windows installer and for the same reason: on a
+# desktop Linux machine, "download a tarball and put the binary somewhere on
+# your PATH" is a set of instructions, and a package is a double-click.
+build_deb() {
+  goarch=$1 stage=$2
+
+  # Debian's architecture names are its own, not Go's.
+  case "$goarch" in
+    amd64) debarch=amd64 ;;
+    arm64) debarch=arm64 ;;
+    386)   debarch=i386 ;;
+    arm)   debarch=armhf ;;
+    *)     return 0 ;;
+  esac
+
+  root="${out}/stage/deb-${debarch}"
+  rm -rf "$root"
+  mkdir -p "${root}/DEBIAN" \
+           "${root}/usr/bin" \
+           "${root}/usr/share/applications" \
+           "${root}/usr/share/doc/supportone"
+
+  install -m 0755 "${stage}/supportone-agent" "${root}/usr/bin/supportone-agent"
+  install -m 0644 build/linux/supportone.desktop "${root}/usr/share/applications/supportone.desktop"
+  install -m 0644 LICENSE "${root}/usr/share/doc/supportone/copyright"
+  install -m 0644 README.md "${stage}/START-HERE.txt" "${root}/usr/share/doc/supportone/"
+
+  for icon in build/linux/icons/*.png; do
+    size=$(basename "$icon" .png)
+    mkdir -p "${root}/usr/share/icons/hicolor/${size}x${size}/apps"
+    install -m 0644 "$icon" "${root}/usr/share/icons/hicolor/${size}x${size}/apps/supportone.png"
+  done
+
+  sed -e "s|__VERSION__|${VERSION#v}|" -e "s|__ARCH__|${debarch}|" \
+    build/linux/control.template > "${root}/DEBIAN/control"
+
+  find "$root" -exec touch -h -d "@${SOURCE_DATE_EPOCH}" {} +
+
+  package="supportone_${VERSION#v}_${debarch}.deb"
+  dpkg-deb --root-owner-group --build "$root" "${out}/${package}" > /dev/null
+  touch -d "@${SOURCE_DATE_EPOCH}" "${out}/${package}"
+  echo "  ${package}"
 }
 
 echo "Building the agent:"
@@ -463,7 +561,7 @@ INFO
 # follow from it. Sorted, so this file is reproducible too.
 (
   cd "$out"
-  find . -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name '*.exe' -o -name 'BUILD-INFO.txt' \) \
+  find . -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name '*.exe' -o -name '*.deb' -o -name 'BUILD-INFO.txt' \) \
     | sed 's|^\./||' | sort | xargs $sha_cmd > SHA256SUMS
 )
 

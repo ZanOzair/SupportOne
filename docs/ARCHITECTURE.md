@@ -62,6 +62,8 @@ scripts/release.sh      the reproducible build every release and person runs
 scripts/fuzz.sh         a fuzzing campaign across every parser
 build/icon.py           draws the application icon; no image editor involved
 build/windows/          version metadata and the NSIS installer script
+build/macos/            the application bundle's plist and icon
+build/linux/            desktop entry, package control file and icon set
 docs/
 .github/workflows/      build, test, lint, vulnerability scan, SBOM, release
 ```
