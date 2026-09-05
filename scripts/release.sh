@@ -82,17 +82,25 @@ fi
 # loader that starts the runtime ships beside the executable. It is taken from
 # the pinned go-webview2 module rather than committed here: go.sum already fixes
 # those bytes, so the build has one source of truth for them and no Microsoft
-# binary lives in this repository.
+# binary lives in this repository. The module is downloaded here rather than
+# assumed present: a fresh build machine has an empty module cache, and a check
+# that only passes on a machine that happens to be warm is not a check.
 #
 # Shipping it as a file is not packaging taste. Without it the library maps an
 # embedded copy into the process without the operating system's loader, and that
 # is a technique this project will not use -- see internal/platform.
 webview2_module="github.com/jchv/go-webview2"
-webview2_version=$(go list -m -f '{{.Version}}' "$webview2_module")
-webview2_sdk="$(go env GOMODCACHE)/${webview2_module}@${webview2_version}/webviewloader/sdk"
+if ! go mod download "$webview2_module"; then
+  echo "error: could not download ${webview2_module}" >&2
+  echo "       its bytes are pinned by go.sum; this needs network the first time" >&2
+  exit 1
+fi
+# Ask the toolchain where it put the module rather than assembling the path
+# from a version string: the cache layout is the toolchain's business, not this
+# script's.
+webview2_sdk="$(go list -m -f '{{.Dir}}' "$webview2_module")/webviewloader/sdk"
 if [ ! -d "$webview2_sdk" ]; then
-  echo "error: the WebView2 loader is missing from the module cache" >&2
-  echo "       run: go mod download ${webview2_module}" >&2
+  echo "error: ${webview2_module} has no webviewloader/sdk directory" >&2
   exit 1
 fi
 
