@@ -149,6 +149,16 @@ Both are technician-facing, and neither can change a machine.
 - **A profile cannot apply anything.** Its `offer` field names repairs to suggest, resolved against the compiled-in registry for the platform first. Applying one still goes through the fix consent gate. A file that could repair machines on its own would be dynamic code with extra steps.
 - **A check that did not answer counts against the profile.** Treating "could not check" as conformance would certify machines nobody looked at.
 
+### Parsing operating-system output
+
+Every check reads what some OS tool printed. That text is not attacker-controlled in the usual sense, but it is not this project's either: it changes between OS versions, it is localised, it is truncated when a command is killed, and log lines contain whatever any program on the machine chose to write.
+
+- **Every parser is fuzzed.** `scripts/fuzz.sh` runs a campaign across all 37 targets; the property is that no input makes a parser panic, plus per-parser invariants where one exists (a percentage inside 0–100, a load average not negative).
+- **Found crashes become permanent tests.** A crashing input is written into its package's `testdata/fuzz` and runs as part of `go test ./...` from then on, so a fixed bug cannot come back unnoticed.
+- **Two real defects were found this way**, both the same shape: a malformed line such as `=0` produced a map entry with an empty key. Neither was exploitable, both are fixed, and both inputs are committed.
+
+The residual risk is the usual one for fuzzing: it finds the crashes it happens to reach. Absence of a finding is not proof of absence.
+
 ### The release itself
 
 The supply chain runs in both directions: what goes into a build, and what a person downloads.

@@ -23,7 +23,12 @@ func parseOSRelease(data []byte) map[string]string {
 		if !ok {
 			continue
 		}
-		out[strings.TrimSpace(key)] = strings.Trim(strings.TrimSpace(value), `"'`)
+		// A line like "=value" cuts cleanly but names nothing. Storing it
+		// would put an empty key in the map, which no lookup can ever want.
+		if key = strings.TrimSpace(key); key == "" {
+			continue
+		}
+		out[key] = strings.Trim(strings.TrimSpace(value), `"'`)
 	}
 	return out
 }

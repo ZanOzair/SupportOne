@@ -59,6 +59,7 @@ internal/
   i18n/                 embedded message catalogs
 web/agent-ui/           the interface: TypeScript, React, Tailwind, Vite
 scripts/release.sh      the reproducible build every release and person runs
+scripts/fuzz.sh         a fuzzing campaign across every parser
 docs/
 .github/workflows/      build, test, lint, vulnerability scan, SBOM, release
 ```

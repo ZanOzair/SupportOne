@@ -29,6 +29,11 @@ func parseMemInfo(raw []byte) map[string]uint64 {
 		if !found {
 			continue
 		}
+		// ":0" cuts cleanly but names no field. An empty key in this map is
+		// something no caller can look up, so it does not belong in it.
+		if name = strings.TrimSpace(name); name == "" {
+			continue
+		}
 		fields := strings.Fields(rest)
 		if len(fields) == 0 {
 			continue
@@ -40,7 +45,7 @@ func parseMemInfo(raw []byte) map[string]uint64 {
 		if len(fields) > 1 && strings.EqualFold(fields[1], "kB") {
 			value *= 1024
 		}
-		out[strings.TrimSpace(name)] = value
+		out[name] = value
 	}
 	return out
 }

@@ -90,6 +90,7 @@ Verifiable properties, not marketing claims. The limits of each are documented i
 - **No outbound connection, unless you ask for one.** The agent works with the network unplugged, and nothing in the checking, explaining or repairing path contacts anything. The one exception is the optional assistant, which is off, needs an endpoint you supply, and shows you the exact bytes before it sends them. `updates.os` deliberately reads local records rather than asking Windows Update, Apple, or a package mirror what is new — that would be an outbound connection the user did not ask for. There is no telemetry, no analytics, no crash reporting: not disabled, absent.
 - **You choose what leaves.** Reports are saved to your own computer. Before saving, you pick what to strip — computer name, username and home folder, serial numbers, network addresses — and can see the exact file that would be written.
 - **No dynamic code.** Nothing is downloaded and executed at runtime. Every OS command a check runs is compiled in, passed as separate arguments with no shell involved, and never assembled from user input or model output.
+- **Parsers that do not fall over.** Every parser that reads operating-system output is fuzzed, and every input that has ever crashed one is committed as a permanent test case that runs on each build. Two bugs were found this way and fixed.
 - **A log you can read.** Every check, consent decision, applied fix, rollback and saved file is appended to a plain-text audit log in your own config directory.
 - **The interface is local.** It binds loopback on a random port, requires a token minted for that run, validates `Origin` and `Host` on every request, sends a strict Content-Security-Policy, and shuts itself down when idle.
 
@@ -163,8 +164,10 @@ Or skip trusting this project entirely and rebuild it: `scripts/release.sh` prod
 ## Working on it
 
 ```sh
-go test ./...                     # Go tests, including golden-file report rendering
+go test ./...                     # Go tests, including golden-file rendering and every fuzz seed
 go test ./internal/report -update # rewrite the golden report after an intended change
+scripts/fuzz.sh                   # hunt for new parser crashes (30s per target)
+scripts/release.sh                # build every release artifact, reproducibly
 
 cd web/agent-ui
 npm ci && npm run lint && npm run build   # the interface; dist/ is committed
@@ -185,6 +188,7 @@ Adding a fix is the same shape, with one extra requirement that is a gate rather
 - [docs/FLEET.md](docs/FLEET.md) — the optional server, why it can only receive, and what it does not protect against
 - [docs/OPERATIONS.md](docs/OPERATIONS.md) — monthly reports, profiles, remote help, and what each deliberately does not do
 - [docs/RELEASE.md](docs/RELEASE.md) — verifying a download, rebuilding it yourself, and exactly what is and is not signed
+- [SECURITY.md](SECURITY.md) — how to report a vulnerability, and what counts as one here
 - [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) — assets, adversaries, controls, residual risks, non-goals
 
 ## License

@@ -1,0 +1,40 @@
+# Every GitHub Action in this repository is pinned to a commit digest rather
+# than a tag, because a tag can be moved and an action runs with the calling
+# job's access. That closes one hole and opens another: a digest never updates,
+# so a security fix in an action would never arrive. Dependabot is what makes
+# pinning safe rather than merely strict — it proposes the new digest, with the
+# changelog, as a pull request that has to pass the same CI as anything else.
+#
+# The same reasoning covers Go modules and the interface's npm dependencies.
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(ci)"
+    labels: ["dependencies"]
+
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
+    labels: ["dependencies"]
+
+  - package-ecosystem: npm
+    directory: "/web/agent-ui"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(ui)"
+    labels: ["dependencies"]
+    # The interface is built into the binary, so a dependency bump changes a
+    # committed artifact. Grouping keeps that to one rebuild a week rather
+    # than one per package.
+    groups:
+      interface:
+        patterns: ["*"]
