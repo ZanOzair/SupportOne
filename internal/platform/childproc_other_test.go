@@ -10,6 +10,7 @@ import (
 func TestNoConsoleWindowIsHarmlessHere(t *testing.T) {
 	cmd := exec.Command("echo", "ok")
 	NoConsoleWindow(cmd)
+	HideConsoleTool(cmd)
 
 	if cmd.SysProcAttr != nil {
 		t.Error("NoConsoleWindow touched SysProcAttr on a platform that has no console windows")
