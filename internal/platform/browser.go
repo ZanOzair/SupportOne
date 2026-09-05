@@ -28,7 +28,9 @@ func OpenBrowser(ctx context.Context, target string) error {
 
 	// #nosec G204 -- name comes from a compiled-in table and target is the
 	// agent's own loopback URL, checked above.
-	return exec.CommandContext(ctx, name, args...).Start()
+	cmd := exec.CommandContext(ctx, name, args...)
+	NoConsoleWindow(cmd)
+	return cmd.Start()
 }
 
 // browserCommand returns the compiled-in way each desktop opens a URL.

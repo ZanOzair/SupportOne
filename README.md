@@ -162,7 +162,7 @@ Windows gets the real thing because WebView2 is reachable from Go without cgo an
 
 `--fix` prints exactly what will change and then asks you to type the repair's ID. Anything else — `y`, `yes`, a blank line, or nothing at all because the command was run from a script — leaves the computer untouched. Where no restore point can be made, that is a second question with its own answer. If the repair can be undone, the offer to undo it comes straight after, because the record of what was applied lives in the process that applied it.
 
-On Windows the agent is a GUI program: double-clicking it opens the interface with no terminal window behind it. Run from a Command Prompt it borrows that prompt's console, so `--text`, `--json` and `--version` still print where you can read them. If nothing can be opened at all it shows the address in a message box rather than failing silently.
+On Windows the agent is a GUI program: double-clicking it opens the interface with no terminal window behind it, and the system tools it runs during a check are started with no console of their own, so nothing flashes on screen while it works. Run from a Command Prompt it borrows that prompt's console, so `--text`, `--json` and `--version` still print where you can read them. If nothing can be opened at all it shows the address in a message box rather than failing silently.
 
 Closing the window stops the agent. The page tells the agent to shut down as it goes, so the program ends when the window does, the way closing an application ends it — rather than sitting in the background until the idle timeout. The idle timeout is still there for the case where the message never arrives.
 

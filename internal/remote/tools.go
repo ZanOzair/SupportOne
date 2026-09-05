@@ -194,6 +194,13 @@ func launch(ctx context.Context, path string) error {
 	// #nosec G204 -- path is what look() resolved for an entry in knownTools;
 	// no part of it comes from user input, and no arguments are passed.
 	cmd := exec.Command(path)
+
+	// A remote-help tool is a windowed program, so this changes nothing for
+	// the ones in knownTools. It is here because the agent has no console to
+	// give away: if one of these ever ships a console launcher, it would open
+	// a black window in the user's face at exactly the wrong moment.
+	platform.NoConsoleWindow(cmd)
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("remote: start %s: %w", filepath.Base(path), err)
 	}

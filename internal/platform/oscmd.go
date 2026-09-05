@@ -49,6 +49,7 @@ func run(ctx context.Context, name string, args ...string) ([]byte, error) {
 
 	var stdout, stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, name, args...) // #nosec G204 -- name and args are compiled-in constants; see doc comment.
+	NoConsoleWindow(cmd)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 

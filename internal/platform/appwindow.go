@@ -41,6 +41,7 @@ func OpenAppWindow(target string) error {
 	// disk rather than named by anyone, and target is the agent's own loopback
 	// URL, checked above.
 	cmd := exec.Command(program, appWindowArgs(target)...)
+	NoConsoleWindow(cmd)
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("platform: %s would not start: %w", filepath.Base(program), err)
 	}
