@@ -17,3 +17,6 @@ node_modules/
 # Local environment
 .env
 .DS_Store
+
+# Windows resource objects are generated during the release build.
+cmd/*/resource_windows_*.syso

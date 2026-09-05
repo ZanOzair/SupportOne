@@ -155,6 +155,14 @@ With no flags it runs the checks and opens its interface in your browser, served
 
 Builds you make yourself say they are development builds, and a build made from a tree with uncommitted changes says that too rather than quoting a commit hash it does not match.
 
+## Installing it
+
+On Windows, download **`SupportOne-Setup-<version>-amd64.exe`** from the [latest release](https://github.com/ZanOzair/SupportOne/releases) and run it. SupportOne lands in the Start Menu with an optional desktop icon, and appears in Settings → Apps so it can be removed the ordinary way. It installs for the current user only and asks for no administrator rights — the program does not need them to look at a computer, and an installer that demanded them would be the first thing contradicting that.
+
+The `.zip` and `.tar.gz` archives are the same program without an installer, for anyone who would rather unpack it themselves. Each carries a `START-HERE.txt` written for someone who has never opened a terminal.
+
+**Windows will still warn you about the installer**, because it is not signed by a certificate authority. That warning is correct and the release notes explain how to verify the download instead of clicking past it.
+
 ## Downloading it
 
 Releases carry every artifact, a `SHA256SUMS`, a Sigstore signature over it, and a `BUILD-INFO.txt` naming the commit and the exact Go toolchain that built them.

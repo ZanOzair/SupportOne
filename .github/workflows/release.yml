@@ -24,6 +24,7 @@ env:
   # be rebuilt byte for byte by anyone who reads BUILD-INFO.txt.
   RELEASE_GO_VERSION: "1.24.7"
   CYCLONEDX_GOMOD_VERSION: v1.12.0
+  GOVERSIONINFO_VERSION: v1.4.1
 
 jobs:
   build:
@@ -56,6 +57,17 @@ jobs:
             echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
             echo "publish=false" >> "$GITHUB_OUTPUT"
           fi
+
+      # The Windows artifacts carry an embedded icon, version metadata and an
+      # installer. All three are hashed and signed like everything else, so
+      # they are built on every run rather than only at release time — a
+      # packaging step that runs once a month is a packaging step that is
+      # broken when you need it.
+      - name: Windows packaging tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nsis
+          go install "github.com/josephspurrier/goversioninfo/cmd/goversioninfo@${GOVERSIONINFO_VERSION}"
 
       - name: Build every artifact
         env:
@@ -92,6 +104,17 @@ jobs:
       # derives everything from the commit exactly as a stranger would, so a
       # match here means the recipe reproduces, not that two runs were told
       # the same answers.
+      # The Windows artifacts carry an embedded icon, version metadata and an
+      # installer. All three are hashed and signed like everything else, so
+      # they are built on every run rather than only at release time — a
+      # packaging step that runs once a month is a packaging step that is
+      # broken when you need it.
+      - name: Windows packaging tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nsis
+          go install "github.com/josephspurrier/goversioninfo/cmd/goversioninfo@${GOVERSIONINFO_VERSION}"
+
       - name: Build it again, independently
         env:
           VERSION: ${{ needs.build.outputs.version }}
@@ -197,6 +220,16 @@ jobs:
           VERSION: ${{ needs.build.outputs.version }}
         run: |
           cat > notes.md <<'NOTES'
+          ## Installing on Windows
+
+          **`SupportOne-Setup-<version>-amd64.exe`** is the installer — run it and
+          SupportOne appears in your Start Menu, with an optional desktop icon and
+          an entry in Settings → Apps to remove it again. It installs for the
+          current user only and asks for no administrator rights.
+
+          The `.zip` files are the same program without an installer, for anyone
+          who would rather unpack it themselves.
+
           ## Verifying this download
 
           Every file here is listed in `SHA256SUMS`, and `SHA256SUMS` is signed.

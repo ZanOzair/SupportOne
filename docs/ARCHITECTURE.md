@@ -60,6 +60,8 @@ internal/
 web/agent-ui/           the interface: TypeScript, React, Tailwind, Vite
 scripts/release.sh      the reproducible build every release and person runs
 scripts/fuzz.sh         a fuzzing campaign across every parser
+build/icon.py           draws the application icon; no image editor involved
+build/windows/          version metadata and the NSIS installer script
 docs/
 .github/workflows/      build, test, lint, vulnerability scan, SBOM, release
 ```

@@ -17,6 +17,7 @@ env:
   GOLANGCI_LINT_VERSION: v2.13.2
   GOVULNCHECK_VERSION: v1.7.0
   CYCLONEDX_GOMOD_VERSION: v1.12.0
+  GOVERSIONINFO_VERSION: v1.4.1
   TOOLCHAIN_GO_VERSION: "1.26.x"
   NODE_VERSION: "22.x"
   MIN_COVERAGE: "80.0"
@@ -83,6 +84,17 @@ jobs:
         with:
           go-version-file: go.mod
           check-latest: true
+
+      # The Windows artifacts carry an embedded icon, version metadata and an
+      # installer. All three are hashed and signed like everything else, so
+      # they are built on every run rather than only at release time — a
+      # packaging step that runs once a month is a packaging step that is
+      # broken when you need it.
+      - name: Windows packaging tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nsis
+          go install "github.com/josephspurrier/goversioninfo/cmd/goversioninfo@${GOVERSIONINFO_VERSION}"
 
       # The same script a release runs and a person can run, rather than CI's
       # own copy of the build flags. One definition means the artifacts anyone

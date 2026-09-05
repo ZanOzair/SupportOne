@@ -63,6 +63,27 @@ for tool in zip go git; do
   command -v "$tool" >/dev/null 2>&1 || { echo "error: $tool is required" >&2; exit 1; }
 done
 
+# The Windows artifacts carry an icon, version metadata and an installer, and
+# all three are part of what gets hashed. Building them only when the tools
+# happen to be present would mean two people building one commit get different
+# files, so these are required rather than optional.
+goversioninfo=${GOVERSIONINFO:-goversioninfo}
+if ! command -v "$goversioninfo" >/dev/null 2>&1; then
+  if [ -x "$(go env GOPATH)/bin/goversioninfo" ]; then
+    goversioninfo="$(go env GOPATH)/bin/goversioninfo"
+  else
+    echo "error: goversioninfo is required for the Windows icon and version metadata" >&2
+    echo "       go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.1" >&2
+    exit 1
+  fi
+fi
+
+command -v makensis >/dev/null 2>&1 || {
+  echo "error: makensis (NSIS) is required to build the Windows installer" >&2
+  echo "       Debian/Ubuntu: apt-get install nsis" >&2
+  exit 1
+}
+
 # The checksum tool is resolved once, as a command rather than a shell
 # function, so the pipeline below can hand it a list of files.
 if command -v sha256sum >/dev/null 2>&1; then
@@ -99,6 +120,21 @@ mkdir -p "$out"
 echo "SupportOne ${VERSION} (${commit})"
 echo "build date ${build_date} (SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH})"
 echo
+
+# numeric_version reduces the version to the four-number form Windows resource
+# metadata insists on. A tag like v1.2.3 becomes 1.2.3; anything else — a
+# commit hash from a build off a branch — becomes 0.0.0, which is honest about
+# not being a release rather than inventing a number.
+numeric_version() {
+  case "${1#v}" in
+    [0-9]*.[0-9]*.[0-9]*)
+      printf '%s' "${1#v}" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*$/\1/'
+      ;;
+    *)
+      printf '0.0.0'
+      ;;
+  esac
+}
 
 # start_here writes the first thing a non-technical person should read.
 #
@@ -143,8 +179,20 @@ SERVER
   case "$goos" in
     windows)
       cat <<'WINDOWS'
-TO RUN IT
----------
+THE EASIER WAY
+--------------
+
+If you downloaded this .zip, there is also an installer next to it on the
+releases page, called SupportOne-Setup-...exe. It puts SupportOne in your
+Start Menu, offers a desktop icon, and adds an entry to Settings > Apps so
+you can remove it like any other program. It installs for you only and does
+not ask for administrator rights.
+
+This .zip is for anyone who would rather unpack it themselves. Both contain
+exactly the same program.
+
+TO RUN IT FROM HERE
+-------------------
 
   1. Double-click supportone-agent.exe
 
@@ -296,6 +344,26 @@ build_one() {
   # dirty, from one invocation. The commit is stamped explicitly below, from
   # git, once — so the ambient stamp is redundant here and only ever a way for
   # the output to depend on when it ran.
+  # A Windows binary with no icon and no version metadata shows as a blank
+  # page in Explorer and tells Properties nothing about itself. Both come from
+  # a resource object compiled here and linked by the Go toolchain, which picks
+  # it up from the command's own directory by its GOOS/GOARCH suffix.
+  syso=""
+  if [ "$goos" = "windows" ]; then
+    syso="cmd/${cmd}/resource_windows_${goarch}.syso"
+    bits="-64"
+    case "$goarch" in
+      386) bits="" ;;
+      arm64) bits="-64 -arm" ;;
+    esac
+    # shellcheck disable=SC2086
+    "$goversioninfo" $bits \
+      -icon build/windows/supportone.ico \
+      -product-version "$(numeric_version "$VERSION")" \
+      -file-version "$(numeric_version "$VERSION")" \
+      -o "$syso" build/windows/versioninfo.json
+  fi
+
   CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" GOARM="$goarm" GOTOOLCHAIN=local \
     go build -trimpath -buildvcs=false \
       -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${commit} -X main.buildDate=${build_date}" \
@@ -311,6 +379,8 @@ build_one() {
   # ran. Directories too, or their mtimes leak the build time.
   find "$stage" -exec touch -h -d "@${SOURCE_DATE_EPOCH}" {} +
 
+  [ -n "$syso" ] && rm -f "$syso"
+
   archive_base="${cmd}-${VERSION}-${goos}-${goarch}"
   if [ "$goos" = "windows" ]; then
     # -X drops the extra attributes (uid, gid, high-precision times) that
@@ -321,6 +391,23 @@ build_one() {
       find "$archive_base" -type f | sort | zip -q -X -9 "../${archive_base}.zip" -@
     )
     echo "  ${archive_base}.zip"
+
+    if [ "$cmd" = "supportone-agent" ]; then
+      # The installer is what makes this look like a program somebody
+      # installed rather than a file they found: a Start Menu entry, an
+      # optional desktop icon, and an entry in Settings > Apps that removes
+      # it again. It installs per-user and asks for no administrator rights,
+      # because the program itself does not need them.
+      installer="SupportOne-Setup-${VERSION}-${goarch}.exe"
+      makensis -V1 \
+        -DVERSION="$(numeric_version "$VERSION")" \
+        -DARCH="$goarch" \
+        -DSOURCE="$(cd "$stage" && pwd)" \
+        -DOUTFILE="$(cd "$out" && pwd)/${installer}" \
+        build/windows/installer.nsi > /dev/null
+      touch -d "@${SOURCE_DATE_EPOCH}" "${out}/${installer}"
+      echo "  ${installer}"
+    fi
   else
     "$tar_bin" --sort=name --format=gnu \
       --owner=0 --group=0 --numeric-owner \
@@ -376,7 +463,7 @@ INFO
 # follow from it. Sorted, so this file is reproducible too.
 (
   cd "$out"
-  find . -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name 'BUILD-INFO.txt' \) \
+  find . -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name '*.exe' -o -name 'BUILD-INFO.txt' \) \
     | sed 's|^\./||' | sort | xargs $sha_cmd > SHA256SUMS
 )
 
