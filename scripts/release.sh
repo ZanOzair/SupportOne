@@ -226,15 +226,20 @@ TO RUN IT FROM HERE
   3. Then click "More info" and "Run anyway". Windows only asks once.
 
   4. Nothing seems to happen for about half a minute -- that is the checks
-     running -- and then your browser opens by itself showing the results.
-     There is no terminal window; SupportOne is a normal Windows program.
+     running -- and then a SupportOne window opens showing the results. It is
+     an ordinary window with its own button on the taskbar. There is no
+     terminal and no address bar.
 
-If your browser does not open, SupportOne shows you the address in a small
-window instead. It starts with http://127.0.0.1 and works on this computer
-only; nothing on the internet can reach it.
+     On a computer with no Microsoft Edge or Google Chrome installed, the
+     results open in whatever browser you do have instead. It is the same
+     page either way.
 
-To stop it: click Close in the page. It also shuts itself down after a while
-unused. If you would rather watch what it is doing, open a Command Prompt and
+If no window opens at all, SupportOne shows you the address in a small message
+box. It starts with http://127.0.0.1 and works on this computer only; nothing
+on the internet can reach it.
+
+To stop it: close the window, or click Close in the page. Either one stops the
+program. If you would rather watch what it is doing, open a Command Prompt and
 run it from there -- it prints to the prompt when started that way.
 WINDOWS
       ;;
@@ -265,14 +270,16 @@ TO RUN IT
   3. Then: System Settings -> Privacy & Security, scroll down, and click
      "Open Anyway" next to the message about SupportOne. macOS only asks once.
 
-  4. The checks run for about half a minute and your browser opens by itself.
+  4. The checks run for about half a minute and a SupportOne window opens by
+     itself. If you have Chrome, Edge or Brave installed it is a window of its
+     own, with its own icon in the Dock. With only Safari it opens as a tab
+     instead -- Safari has no way to do the former, and the page is the same.
 
-If the browser does not open, Terminal prints an address starting with
-http://127.0.0.1 -- copy that into your browser. That address is on this
-computer only; nothing on the internet can reach it.
+If nothing opens, Terminal prints an address starting with http://127.0.0.1 --
+copy that into your browser. That address is on this computer only; nothing on
+the internet can reach it.
 
-To stop it: press Ctrl+C in Terminal. It also shuts itself down after a while
-unused.
+To stop it: close the window, or press Ctrl+C in Terminal.
 MACOS
       ;;
     *)
@@ -311,7 +318,9 @@ TO RUN IT FROM HERE
      and compare it against the SHA256SUMS file published with this download
      at https://github.com/ZanOzair/SupportOne/releases
 
-  3. The checks run for about half a minute and your browser opens by itself.
+  3. The checks run for about half a minute and a SupportOne window opens by
+     itself -- a window of its own where Chromium, Chrome or Edge is
+     installed, and an ordinary browser tab otherwise.
 
 On a machine with no desktop, use:
 

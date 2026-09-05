@@ -14,8 +14,8 @@ import (
 // and nothing to quote. A URL that did not come from the agent is refused
 // outright.
 func OpenBrowser(ctx context.Context, target string) error {
-	if !strings.HasPrefix(target, "http://127.0.0.1:") {
-		return fmt.Errorf("platform: refusing to open %q: only the agent's own loopback address is opened", target)
+	if err := checkLoopback(target); err != nil {
+		return err
 	}
 
 	name, args := browserCommand(target)
@@ -45,4 +45,14 @@ func browserCommand(target string) (string, []string) {
 	default:
 		return "", nil
 	}
+}
+
+// checkLoopback refuses any address the agent did not mint for its own
+// listener. Both ways of showing the interface start here, because both end in
+// handing an address to a program that will fetch it.
+func checkLoopback(target string) error {
+	if !strings.HasPrefix(target, "http://127.0.0.1:") {
+		return fmt.Errorf("platform: refusing to open %q: only the agent's own loopback address is opened", target)
+	}
+	return nil
 }

@@ -27,17 +27,22 @@ Scope as of Phase 1: the agent binary, its twelve read-only checks, the local in
 
 ### Local web UI
 
-The agent serves its UI on loopback and opens the user's browser. Implemented controls, each covered by a test in `internal/localui`:
+The agent serves its UI on loopback and opens it in a window of its own, falling back to the user's browser. Implemented controls, each covered by a test in `internal/localui`:
 
 - Binds `127.0.0.1` only, on a port the OS assigns from the ephemeral range.
 - A 32-byte token from the OS random source, minted per run, required on every `/api/` request and compared in constant time.
 - `Origin` and `Host` validated against the listening address on every request, which is what actually blocks DNS rebinding — a rebound attacker resolves a hostname to `127.0.0.1` but cannot forge these headers.
 - `Content-Security-Policy: default-src 'none'` with `script-src 'self'`, no inline script, no remote origin, and `frame-ancestors 'none'`.
-- Shuts down after 15 minutes unused, or when the user closes the session from the page.
+- Shuts down after 15 minutes unused, when the user closes the session from the page, or when the window is closed — the page sends the same token-protected close request on `pagehide`.
+- The program launched to show that window is chosen from a compiled-in table of install paths, never named by a user, a config file or a model, and is started with no shell and with the agent's own loopback URL as the only variable argument. `internal/platform` refuses any address that is not the agent's own listener, and that refusal is tested for both the window and the browser path.
 
 Static files are served without a token. They carry no data — the snapshot reaches the page only through the token-protected API — and requiring one would mean putting the token in every asset request.
 
-Residual risk: any process on the machine running as the user can read the token from the process's own environment and connect. This is not a boundary the agent can enforce; a local attacker with the user's rights has already won.
+Residual risks:
+
+- Any process on the machine running as the user can read the token from the process's own environment and connect. This is not a boundary the agent can enforce; a local attacker with the user's rights has already won.
+- The window is a browser process, so the user's extensions and browser profile are in it, exactly as they were when the UI opened as a tab. This is not made worse by the app window, and the app window makes one thing better: with no address bar, the session token is never displayed and cannot be read off a screenshot or a shoulder.
+- A user who can write to `%ProgramFiles%\Microsoft\Edge\Application\msedge.exe` can substitute the program that gets launched. That user can already replace the agent binary itself, so this adds no reachable capability.
 
 ### Fix execution
 

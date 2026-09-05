@@ -158,6 +158,12 @@ Three packages serve the running of a fleet rather than the fixing of one machin
 
 The agent serves its own interface rather than shipping a GUI toolkit, so the same screens render on every OS and the binary stays a few megabytes.
 
+It still has to *look* like an application, and that is a separate problem from serving the page. `internal/platform.OpenAppWindow` asks an already-installed Chromium-family browser for an app window — `--app=`, the window those browsers use for installed web apps — which has no address bar, no tab strip and its own entry in the taskbar or dock. The browser is found in a compiled-in table of the paths these programs install themselves to, because neither Windows nor macOS puts them on `PATH`; the URL is the agent's own loopback address, checked before anything launches; no shell is involved either way.
+
+The alternative was linking a real window toolkit. Every option that draws its own window (WebView2, WebKitGTK, Fyne, Wails) needs cgo, a platform SDK per target, and in several cases a runtime present on the user's machine. That would cost `CGO_ENABLED=0`, cross-compilation of nine targets from one Linux machine, the single static file, and the byte-for-byte reproducibility gate — for a window that looks the same. `--app=` costs one exec of a program the user already has. Where no such browser exists the interface opens as an ordinary tab: a worse window, never a missing one.
+
+Two smaller consequences follow. The token no longer appears on screen at all, because there is no address bar to strip it from. And the page sends `POST /api/close` on `pagehide` with `navigator.sendBeacon`, so closing the window ends the process — an application that keeps running after you close it is the behaviour being avoided. The idle timeout remains for the case where that beacon never arrives.
+
 `internal/localui` binds `127.0.0.1:0` — the operating system picks a free port, which is what makes the address unguessable — mints a 32-byte token from the OS random source, and opens the browser at a URL carrying it. The page keeps the token in memory and removes it from the address bar, so it does not reach browser history or a screenshot.
 
 Every `/api/` request must present that token, compared in constant time. Every response carries a Content-Security-Policy with no inline script and no remote origin, and every request is checked against the listening address: a page that rebinds a DNS name to `127.0.0.1` still cannot forge the `Origin` and `Host` headers the browser sends. The server shuts down when idle.

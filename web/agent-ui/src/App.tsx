@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   closeSession,
+  closeSessionOnUnload,
   fetchAdvice,
   fetchAssistState,
   fetchFixes,
@@ -137,6 +138,16 @@ export default function App() {
     closeSession()
       .then(() => setClosed(true))
       .catch((err: Error) => setError(err.message));
+  }, []);
+
+  // Closing the window ends the agent, the way closing an application ends it.
+  // Without this the program would sit there until the idle timeout, which is
+  // the behaviour that makes a tool feel like it is still watching after you
+  // told it to stop. pagehide rather than beforeunload: beforeunload is not
+  // dependable on mobile and is treated as a prompt to stay, which this is not.
+  useEffect(() => {
+    window.addEventListener('pagehide', closeSessionOnUnload);
+    return () => window.removeEventListener('pagehide', closeSessionOnUnload);
   }, []);
 
   if (!hasToken) {

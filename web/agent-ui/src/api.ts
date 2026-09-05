@@ -91,6 +91,23 @@ export function closeSession(): Promise<{ status: string }> {
   return request('/api/close', { method: 'POST' });
 }
 
+/**
+ * Tells the agent to stop, from a page that is being closed.
+ *
+ * A window closing is the last thing that happens on it: fetch is cancelled
+ * with the page, so the request never leaves. sendBeacon is the browser's
+ * answer to that, and it is why this cannot reuse `closeSession` — a beacon
+ * carries no headers, so the token goes in the query string instead, the same
+ * place the agent already accepts it from. Nothing is awaited because there is
+ * nothing left to await it.
+ */
+export function closeSessionOnUnload(): void {
+  if (!token || typeof navigator.sendBeacon !== 'function') {
+    return;
+  }
+  navigator.sendBeacon(`/api/close?t=${encodeURIComponent(token)}`);
+}
+
 function post<T>(path: string, body: unknown): Promise<T> {
   return request<T>(path, {
     method: 'POST',

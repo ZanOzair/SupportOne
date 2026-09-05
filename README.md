@@ -114,7 +114,9 @@ go build -o supportone-agent ./cmd/supportone-agent
 ./supportone-agent
 ```
 
-With no flags it runs the checks and opens its interface in your browser, served from `127.0.0.1` on a random port.
+With no flags it runs the checks and opens its interface in a window of its own — no address bar, no tabs, its own entry in the taskbar or dock — served from `127.0.0.1` on a random port.
+
+That window is a Chromium-family browser you already have (Edge, Chrome, Brave, Chromium, Vivaldi) asked for an app window, which is the same window those browsers use for installed web apps. Nothing extra is downloaded and no window toolkit is linked in, which is what keeps the agent one static file that cross-compiles to nine targets from a single machine. Where no such browser is installed — a Mac with only Safari, a minimal Linux desktop — the same page opens as an ordinary browser tab instead. `--in-browser` asks for the tab deliberately.
 
 | Flag | Effect |
 |---|---|
@@ -141,7 +143,8 @@ With no flags it runs the checks and opens its interface in your browser, served
 | `--remote-tool <id>` | Which installed remote-help program to start |
 | `--describe` | Your own description of the problem, to go in the bundle |
 | `--attach` | Image files to include in the bundle, comma separated |
-| `--no-browser` | Print the interface address instead of opening a browser |
+| `--no-browser` | Print the interface address instead of opening anything |
+| `--in-browser` | Open the interface as a browser tab rather than in a window of its own |
 | `--lang` | Language tag, `en` or `ms` (defaults to the system language) |
 | `--dry-run` | Report what would change without changing anything |
 | `--audit-log` | Path to the audit log (defaults to your config directory) |
@@ -151,7 +154,9 @@ With no flags it runs the checks and opens its interface in your browser, served
 
 `--fix` prints exactly what will change and then asks you to type the repair's ID. Anything else — `y`, `yes`, a blank line, or nothing at all because the command was run from a script — leaves the computer untouched. Where no restore point can be made, that is a second question with its own answer. If the repair can be undone, the offer to undo it comes straight after, because the record of what was applied lives in the process that applied it.
 
-On Windows the agent is a GUI program: double-clicking it opens the interface with no terminal window behind it. Run from a Command Prompt it borrows that prompt's console, so `--text`, `--json` and `--version` still print where you can read them. If it cannot open a browser it shows the address in a window rather than failing silently.
+On Windows the agent is a GUI program: double-clicking it opens the interface with no terminal window behind it. Run from a Command Prompt it borrows that prompt's console, so `--text`, `--json` and `--version` still print where you can read them. If nothing can be opened at all it shows the address in a message box rather than failing silently.
+
+Closing the window stops the agent. The page tells the agent to shut down as it goes, so the program ends when the window does, the way closing an application ends it — rather than sitting in the background until the idle timeout. The idle timeout is still there for the case where the message never arrives.
 
 `--version` prints what the build says it is, and then says what that is worth: a version a program prints about itself is not evidence, because a changed copy prints whatever it was changed to print. It points at the check that does mean something.
 

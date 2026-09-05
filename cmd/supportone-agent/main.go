@@ -1,14 +1,16 @@
 // Command supportone-agent runs SupportOne's read-only diagnostics on the
 // machine it is started on.
 //
-// Started with no flags it opens its interface in the user's browser, served
-// from loopback. It makes no outbound network connection: nothing leaves this
-// computer unless the user saves or sends it themselves.
+// Started with no flags it opens its interface in a window of its own, served
+// from loopback, falling back to a browser tab on a machine with no browser
+// that can do that. It makes no outbound network connection: nothing leaves
+// this computer unless the user saves or sends it themselves.
 package main
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -94,6 +96,7 @@ type options struct {
 	timeout     time.Duration
 	idleTimeout time.Duration
 	noBrowser   bool
+	inBrowser   bool
 	showVer     bool
 }
 
@@ -247,6 +250,7 @@ func parseFlags(args []string, stderr io.Writer) (options, error) {
 	fs.DurationVar(&opts.timeout, "timeout", checks.DefaultTimeout, "time limit for a single check")
 	fs.DurationVar(&opts.idleTimeout, "idle-timeout", localui.DefaultIdleTimeout, "close the interface after this long with nobody using it")
 	fs.BoolVar(&opts.noBrowser, "no-browser", false, "print the interface address instead of opening a browser")
+	fs.BoolVar(&opts.inBrowser, "in-browser", false, "open the interface as a browser tab instead of in a window of its own")
 	fs.BoolVar(&opts.showVer, "version", false, "print build information and exit")
 
 	if err := fs.Parse(args); err != nil {
@@ -388,7 +392,7 @@ func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform
 	fmt.Fprintln(w, "This address is on this computer only. Press Ctrl+C to stop.")
 
 	if !opts.noBrowser {
-		if err := platform.OpenBrowser(ctx, server.URL()); err != nil {
+		if err := showInterface(ctx, w, server.URL(), opts.inBrowser); err != nil {
 			// A machine with no desktop session still gets a usable agent:
 			// the address is already printed above.
 			fmt.Fprintf(w, "Could not open a browser (%v). Open the address above yourself.\n", err)
@@ -406,6 +410,30 @@ func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform
 		}
 	}
 	return server.Serve(ctx)
+}
+
+// showInterface puts the interface in front of the person who started the
+// agent, preferring a window of its own to a browser tab.
+//
+// The order is the point. A window with no address bar and its own taskbar
+// entry is what somebody double-clicking an application expects, and it is
+// what a Chromium-family browser will give when asked. When there is no such
+// browser installed the interface still has to appear, so the ordinary browser
+// is the fallback rather than an error — the same page either way.
+func showInterface(ctx context.Context, w io.Writer, url string, inBrowser bool) error {
+	if !inBrowser {
+		err := platform.OpenAppWindow(url)
+		if err == nil {
+			return nil
+		}
+		if !errors.Is(err, platform.ErrNoAppWindow) {
+			// Something is installed and refused to start. Say so, because it
+			// is the difference between a missing browser and a broken one,
+			// then try the ordinary browser anyway.
+			fmt.Fprintf(w, "Could not open a window of its own (%v). Trying a browser.\n", err)
+		}
+	}
+	return platform.OpenBrowser(ctx, url)
 }
 
 func writeText(w io.Writer, bundle *i18n.Bundle, snap checks.Snapshot, host platform.Host, opts options, auditPath string) {
