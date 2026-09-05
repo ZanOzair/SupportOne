@@ -78,6 +78,24 @@ if ! command -v "$goversioninfo" >/dev/null 2>&1; then
   fi
 fi
 
+# The Windows agent draws its own window through WebView2, and the Microsoft
+# loader that starts the runtime ships beside the executable. It is taken from
+# the pinned go-webview2 module rather than committed here: go.sum already fixes
+# those bytes, so the build has one source of truth for them and no Microsoft
+# binary lives in this repository.
+#
+# Shipping it as a file is not packaging taste. Without it the library maps an
+# embedded copy into the process without the operating system's loader, and that
+# is a technique this project will not use -- see internal/platform.
+webview2_module="github.com/jchv/go-webview2"
+webview2_version=$(go list -m -f '{{.Version}}' "$webview2_module")
+webview2_sdk="$(go env GOMODCACHE)/${webview2_module}@${webview2_version}/webviewloader/sdk"
+if [ ! -d "$webview2_sdk" ]; then
+  echo "error: the WebView2 loader is missing from the module cache" >&2
+  echo "       run: go mod download ${webview2_module}" >&2
+  exit 1
+fi
+
 command -v makensis >/dev/null 2>&1 || {
   echo "error: makensis (NSIS) is required to build the Windows installer" >&2
   echo "       Debian/Ubuntu: apt-get install nsis" >&2
@@ -226,17 +244,19 @@ TO RUN IT FROM HERE
   3. Then click "More info" and "Run anyway". Windows only asks once.
 
   4. Nothing seems to happen for about half a minute -- that is the checks
-     running -- and then a SupportOne window opens showing the results. It is
-     an ordinary window with its own button on the taskbar. There is no
-     terminal and no address bar.
-
-     On a computer with no Microsoft Edge or Google Chrome installed, the
-     results open in whatever browser you do have instead. It is the same
-     page either way.
+     running -- and then the SupportOne window opens showing the results.
+     It is SupportOne's own window: its icon, its own button on the taskbar,
+     no terminal and no browser.
 
 If no window opens at all, SupportOne shows you the address in a small message
 box. It starts with http://127.0.0.1 and works on this computer only; nothing
 on the internet can reach it.
+
+About the extra file: WebView2Loader.dll sits next to supportone-agent.exe and
+is what lets SupportOne draw its own window. It is Microsoft's file, shipped
+unmodified, and WEBVIEW2-NOTICE.txt is its licence. Keep the two together --
+on its own, supportone-agent.exe falls back to opening a browser instead. If
+you used the installer, this is already handled.
 
 To stop it: close the window, or click Close in the page. Either one stops the
 program. If you would rather watch what it is doing, open a Command Prompt and
@@ -419,6 +439,21 @@ build_one() {
   # page telling them what to click.
   cp LICENSE README.md "$stage/"
   start_here "$cmd" "$goos" > "${stage}/START-HERE.txt"
+
+  # The window the agent draws needs Microsoft's loader beside it. The agent
+  # checks for this file and falls back to a browser window when it is absent,
+  # so an archive missing it degrades rather than breaks -- but no archive
+  # should be missing it.
+  if [ "$goos" = "windows" ] && [ "$cmd" = "supportone-agent" ]; then
+    case "$goarch" in
+      amd64) webview2_arch=x64 ;;
+      386)   webview2_arch=x86 ;;
+      arm64) webview2_arch=arm64 ;;
+      *)     echo "error: no WebView2 loader for windows/${goarch}" >&2; exit 1 ;;
+    esac
+    cp "${webview2_sdk}/${webview2_arch}/WebView2Loader.dll" "${stage}/WebView2Loader.dll"
+    cp build/windows/WEBVIEW2-NOTICE.txt "${stage}/"
+  fi
 
   # macOS shows a bare binary as a blank document that opens a terminal. An
   # application bundle is what makes it a double-clickable program with an

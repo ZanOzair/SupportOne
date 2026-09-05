@@ -114,9 +114,17 @@ go build -o supportone-agent ./cmd/supportone-agent
 ./supportone-agent
 ```
 
-With no flags it runs the checks and opens its interface in a window of its own — no address bar, no tabs, its own entry in the taskbar or dock — served from `127.0.0.1` on a random port.
+With no flags it runs the checks and opens its interface in a window — no address bar, no tabs, its own entry in the taskbar or dock — served from `127.0.0.1` on a random port.
 
-That window is a Chromium-family browser you already have (Edge, Chrome, Brave, Chromium, Vivaldi) asked for an app window, which is the same window those browsers use for installed web apps. Nothing extra is downloaded and no window toolkit is linked in, which is what keeps the agent one static file that cross-compiles to nine targets from a single machine. Where no such browser is installed — a Mac with only Safari, a minimal Linux desktop — the same page opens as an ordinary browser tab instead. `--in-browser` asks for the tab deliberately.
+How that window is drawn differs by platform, and the difference is worth stating plainly rather than hiding:
+
+| | What you get | How |
+|---|---|---|
+| **Windows** | SupportOne's own window. No browser process, no browser profile, its own icon in the taskbar and Alt-Tab. | The agent hosts the WebView2 runtime that is part of Windows. `WebView2Loader.dll` ships beside the executable. |
+| **macOS, Linux** | A window with no browser furniture, but drawn by a browser process. | An installed Chromium-family browser (Chrome, Edge, Brave, Chromium, Vivaldi) asked for an app window. |
+| **Anywhere either is missing** | An ordinary browser tab. | The default browser. `--in-browser` asks for this deliberately. |
+
+Windows gets the real thing because WebView2 is reachable from Go without cgo and ships with the operating system. macOS and Linux do not, and the honest reason is a trade rather than a limitation of effort: drawing a window there means WKWebView through the Objective-C runtime, or WebKitGTK, and both need cgo, a platform SDK at build time, and on Linux a library the user must already have installed. That would cost the single static binary and the ability to build all nine targets from one machine. If you want it anyway, it is a decision about the build, not a missing feature — see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Flag | Effect |
 |---|---|

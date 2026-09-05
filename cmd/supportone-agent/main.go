@@ -16,6 +16,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/ZanOzair/SupportOne/internal/assist"
@@ -391,6 +392,13 @@ func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform
 	fmt.Fprintf(w, "SupportOne is running at %s\n", server.URL())
 	fmt.Fprintln(w, "This address is on this computer only. Press Ctrl+C to stop.")
 
+	// A window the agent draws itself is the best answer where it exists, and
+	// it is structurally different from the others: it runs here, in the
+	// foreground, and the server moves to the background behind it.
+	if !opts.noBrowser && !opts.inBrowser && platform.NativeWindowAvailable() {
+		return serveInNativeWindow(ctx, w, server, opts)
+	}
+
 	if !opts.noBrowser {
 		if err := showInterface(ctx, w, server.URL(), opts.inBrowser); err != nil {
 			// A machine with no desktop session still gets a usable agent:
@@ -410,6 +418,67 @@ func serveUI(ctx context.Context, w io.Writer, audit *consent.Log, host platform
 		}
 	}
 	return server.Serve(ctx)
+}
+
+// serveInNativeWindow runs the interface in a window this program owns.
+//
+// The two halves swap roles here. Everywhere else the server blocks and the
+// browser is something that was launched and forgotten; here the window blocks,
+// because a Win32 message loop has to, and the server runs behind it. Closing
+// the window is therefore the signal to stop, which is what makes this behave
+// like an application rather than a service that happens to have a page.
+func serveInNativeWindow(ctx context.Context, w io.Writer, server *localui.Server, opts options) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	served := make(chan error, 1)
+	go func() { served <- server.Serve(ctx) }()
+
+	err := platform.RunNativeWindow(platform.NativeWindowOptions{
+		Title:    "SupportOne",
+		URL:      server.URL(),
+		Width:    1160,
+		Height:   860,
+		DataPath: windowDataPath(),
+	})
+	if err != nil {
+		// The window was available a moment ago and is not now. Rather than
+		// leave the person with a running program and nothing to look at, fall
+		// back to the same ladder everything else uses and keep serving.
+		fmt.Fprintf(w, "Could not open the SupportOne window (%v). Falling back.\n", err)
+		if !opts.noBrowser {
+			if fallbackErr := showInterface(ctx, w, server.URL(), opts.inBrowser); fallbackErr != nil {
+				fmt.Fprintf(w, "Could not open a browser either (%v). Open the address above yourself.\n", fallbackErr)
+				if !hasConsole {
+					_ = platform.ShowMessage("SupportOne", fmt.Sprintf(
+						"SupportOne is running, but it could not open a window.\n\n"+
+							"Open this address yourself:\n\n%s\n\n"+
+							"That address works on this computer only.", server.URL()))
+				}
+			}
+		}
+		return <-served
+	}
+
+	// The window is closed. Stop the server and let it finish shutting down.
+	cancel()
+	if servedErr := <-served; servedErr != nil && !errors.Is(servedErr, context.Canceled) {
+		return servedErr
+	}
+	return nil
+}
+
+// windowDataPath is where the runtime keeps the window's cache and storage.
+//
+// It goes under the agent's own directory rather than defaulting beside the
+// executable, which may be read-only, and never into the user's browser
+// profile: this program's window should leave nothing in it.
+func windowDataPath() string {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(dir, "SupportOne", "window")
 }
 
 // showInterface puts the interface in front of the person who started the

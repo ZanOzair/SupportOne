@@ -86,6 +86,14 @@ Section "SupportOne" SecMain
   SetOutPath "$INSTDIR"
 
   File "${SOURCE}\supportone-agent.exe"
+
+  ; The Microsoft loader that starts the WebView2 runtime. It has to sit beside
+  ; the executable: that is what lets the agent load it through the operating
+  ; system rather than mapping an embedded copy into its own process, which is
+  ; a technique this project will not use. Its licence notice ships with it.
+  File "${SOURCE}\WebView2Loader.dll"
+  File "${SOURCE}\WEBVIEW2-NOTICE.txt"
+
   File "${SOURCE}\LICENSE"
   File "${SOURCE}\README.md"
   File "${SOURCE}\START-HERE.txt"
@@ -133,6 +141,8 @@ LangString DESC_SecDesktop ${LANG_ENGLISH} "Put a SupportOne icon on the desktop
 
 Section "Uninstall"
   Delete "$INSTDIR\supportone-agent.exe"
+  Delete "$INSTDIR\WebView2Loader.dll"
+  Delete "$INSTDIR\WEBVIEW2-NOTICE.txt"
   Delete "$INSTDIR\LICENSE"
   Delete "$INSTDIR\README.md"
   Delete "$INSTDIR\START-HERE.txt"
