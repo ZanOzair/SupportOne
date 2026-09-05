@@ -10,6 +10,14 @@
 Unicode true
 SetCompressor /SOLID lzma
 
+; NSIS stores each packed file's modification time by default, and git sets
+; those to whenever the checkout happened. That made the installer depend on
+; when the machine cloned the repository rather than on what was in it, which
+; the release's reproducibility check caught on its first real run. Turning it
+; off costs nothing: installed files get the install time, which is what a user
+; would expect anyway.
+SetDateSave off
+
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 

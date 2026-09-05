@@ -174,7 +174,9 @@ signs, and publishes nothing.
 
 The macOS archives contain a real `SupportOne.app` bundle — a directory with a plist, the binary and an `.icns`, which needs no Apple tooling to assemble. The Linux archives carry a `desktop-integration/` folder with the same `.desktop` file and icons the `.deb` installs, for anyone unpacking by hand.
 
-The Windows binaries carry an embedded icon and version metadata, generated from `build/icon.py` and `build/windows/versioninfo.json` rather than committed as opaque blobs — the icon is drawn by a script anyone can read and change. The installer is NSIS, built on Linux, and its output is byte-identical between builds, so it is covered by the same reproducibility gate as everything else.
+The Windows binaries carry an embedded icon and version metadata, generated from `build/icon.py` and `build/windows/versioninfo.json` rather than committed as opaque blobs — the icon is drawn by a script anyone can read and change. The installer is NSIS, built on Linux, and its output is byte-identical between builds, so it is covered by the same reproducibility gate as everything else. That took a correction: NSIS stores each packed file's modification time by default, and git sets those to whenever the checkout happened, so the installer depended on *when* a machine cloned the repository rather than on what was in it. `SetDateSave off` removes the dependency. The release gate caught it on its first real run, which is what it is for.
+
+When checking reproducibility by hand, make the two checkouts differ in more than their path — deliberately age one of them. Two clones made within the same second share their file timestamps and will agree for the wrong reason.
 
 Every agent archive carries a `START-HERE.txt` written for somebody who has never opened a terminal: what to double-click, what the operating system's warning means, and how to check the file's hash rather than clicking past the warning on trust.
 
