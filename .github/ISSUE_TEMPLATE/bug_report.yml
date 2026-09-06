@@ -1,0 +1,66 @@
+name: Something is wrong
+description: Report a bug, a wrong answer, or something that will not run
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting this.
+
+        Before filing, it is worth a look at
+        [TROUBLESHOOTING.md](https://github.com/ZanOzair/SupportOne/blob/main/docs/TROUBLESHOOTING.md)
+        — several known problems are answered there, and most of them turn out
+        to be an older version still installed.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: >-
+        Shown under "Your computer's health" in the window, or from
+        `supportone-agent --version`.
+      placeholder: v1.3.2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - Windows Server
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux — Debian, Ubuntu or a relative
+        - Linux — something else
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: text-output
+    attributes:
+      label: Output of --text
+      description: >-
+        If this is about a check giving a wrong or missing answer, run
+        `supportone-agent --text` and paste the output. Redact anything you would
+        rather not publish — it is your report.
+      render: text
+
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before submitting
+      options:
+        - label: I am on the newest release, or I have said above which older one I am on
+          required: true

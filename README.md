@@ -4,6 +4,14 @@ One small binary that reads a computer, explains what it finds in plain language
 
 SupportOne consolidates ten IT-support functions — diagnostics, safe fixes, guided wizards, provisioning, reporting — into a single codebase with a plugin architecture, serving two audiences: the person with the problem, and the technician helping them.
 
+### Get it
+
+**[Download the latest release](https://github.com/ZanOzair/SupportOne/releases/latest)** — Windows, macOS and Linux, nine builds.
+
+New to this, or want the steps spelled out? **[docs/INSTALL.md](docs/INSTALL.md)** is written for somebody who has never opened a terminal, and covers checking the download is genuine — which matters here, because these files are not signed by a certificate authority and your operating system will say so.
+
+Something not working? **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**. What changed between versions? **[CHANGELOG.md](CHANGELOG.md)**.
+
 ## Status
 
 **Phase 6 of 6 — everything above, and a release you can check rather than trust.** Fifteen read-only checks, a local web interface, HTML and JSON reports, redaction before anything is saved, three fixes and two guided walkthroughs behind a consent gate, a plain-language explanation of every verdict, an optional model you can point at your own endpoint, a patch statement, a support bundle, an optional fleet server, scheduled monthly reports, provisioning profiles, a consent wrapper in front of remote help — and now a reproducible, signed release with build provenance.
@@ -223,6 +231,15 @@ Adding a fix is the same shape, with one extra requirement that is a gate rather
 
 ## Documentation
 
+**If you are here to use it**
+
+- [docs/INSTALL.md](docs/INSTALL.md) — installing on any of the three platforms, step by step, and how to check the download is genuine
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — every problem reported so far and what to do about it
+- [CHANGELOG.md](CHANGELOG.md) — what changed in each version, and which one to install
+
+**If you are here to work on it**
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — building it, the checks a change has to pass, and the rules that are not negotiable
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — layout, plugin contracts, phase map
 - [docs/CHECKS.md](docs/CHECKS.md) — every check, what it reads, and its thresholds
 - [docs/FIXES.md](docs/FIXES.md) — the consent gate, every fix, every walkthrough, and what is deliberately not offered

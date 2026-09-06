@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: A security problem
+    url: https://github.com/ZanOzair/SupportOne/blob/main/SECURITY.md
+    about: Please report these privately. SECURITY.md says how.
+  - name: Installing, or something not working
+    url: https://github.com/ZanOzair/SupportOne/blob/main/docs/TROUBLESHOOTING.md
+    about: Known problems and their answers, including every one reported so far.

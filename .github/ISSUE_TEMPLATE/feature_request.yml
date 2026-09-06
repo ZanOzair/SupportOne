@@ -1,0 +1,44 @@
+name: Suggest something
+description: A check, a repair, a walkthrough, or a change to how something works
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Worth knowing before you write: some things are deliberately out of
+        scope, and it is not a matter of effort. SupportOne will not add
+        telemetry, will not download and run code at runtime, will not change a
+        machine without a specific confirmation, and will not require
+        administrator rights to start. Those rules are the project rather than
+        obstacles to it — see
+        [CONTRIBUTING.md](https://github.com/ZanOzair/SupportOne/blob/main/CONTRIBUTING.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: >-
+        The situation, not the solution. What went wrong on a real computer that
+        SupportOne could not help with?
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What do you have in mind?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of thing is it?
+      options:
+        - A check — reads something and reports on it
+        - A repair — changes something, reversibly
+        - A guided walkthrough
+        - A change to the interface
+        - Something else
+    validations:
+      required: true

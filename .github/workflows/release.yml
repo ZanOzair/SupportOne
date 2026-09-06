@@ -218,33 +218,69 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.build.outputs.version }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          cat > notes.md <<'NOTES'
-          ## Installing on Windows
+          cat > notes.md <<NOTES
+          ## What changed
 
-          **`SupportOne-Setup-<version>-amd64.exe`** is the installer — run it and
-          SupportOne appears in your Start Menu, with an optional desktop icon and
-          an entry in Settings → Apps to remove it again. It installs for the
-          current user only and asks for no administrator rights.
+          **[CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/${VERSION}/CHANGELOG.md)**
+          says what is in this version and whether it is worth installing over the
+          one you have.
 
-          The `.zip` files are the same program without an installer, for anyone
-          who would rather unpack it themselves.
+          ## Installing
+
+          **Never installed this before?**
+          [docs/INSTALL.md](https://github.com/${GITHUB_REPOSITORY}/blob/${VERSION}/docs/INSTALL.md)
+          walks through it for somebody who has never opened a terminal, on all
+          three platforms. Short version:
+
+          | | |
+          |---|---|
+          | **Windows** | Run \`SupportOne-Setup-${VERSION}-amd64.exe\`. Start Menu entry, optional desktop icon, uninstaller in Settings → Apps. Installs for your account only; no administrator rights. |
+          | **macOS** | Unpack the \`darwin\` archive — it contains \`SupportOne.app\`. Drag it to Applications. Apple Silicon is \`arm64\`, Intel is \`amd64\`. |
+          | **Debian, Ubuntu, Mint** | \`sudo apt install ./supportone_*_amd64.deb\` |
+          | **Other Linux** | Unpack the \`linux\` archive and run \`./supportone-agent\`. \`--text\` prints the report instead, on a machine with no desktop. |
+
+          The archives are the same program without an installer. Each carries a
+          \`START-HERE.txt\` written for someone who has never opened a terminal.
+
+          **On Windows, keep \`WebView2Loader.dll\` next to \`supportone-agent.exe\`**
+          if you unpack the \`.zip\` by hand. It is what lets SupportOne draw its
+          own window; separated from it, the program falls back to opening a
+          browser. The installer handles this for you.
+
+          Something not working?
+          [docs/TROUBLESHOOTING.md](https://github.com/${GITHUB_REPOSITORY}/blob/${VERSION}/docs/TROUBLESHOOTING.md)
 
           ## Verifying this download
 
-          Every file here is listed in `SHA256SUMS`, and `SHA256SUMS` is signed.
+          Every file here is listed in \`SHA256SUMS\`, and \`SHA256SUMS\` is signed.
+          This is thirty seconds of work and it means you do not have to take
+          anyone's word for anything.
 
-          ```sh
-          sha256sum -c SHA256SUMS --ignore-missing
+          On **Windows**, in PowerShell, from the folder you downloaded into:
 
-          cosign verify-blob SHA256SUMS \
-            --signature SHA256SUMS.sig \
-            --certificate SHA256SUMS.pem \
-            --certificate-identity-regexp 'https://github.com/ZanOzair/SupportOne/.*' \
+          \`\`\`powershell
+          \$file = "SupportOne-Setup-${VERSION}-amd64.exe"
+          \$mine = (Get-FileHash \$file -Algorithm SHA256).Hash.ToLower()
+          \$published = ((Select-String -Path SHA256SUMS -Pattern \$file -SimpleMatch).Line -split '\\s+')[0].ToLower()
+          if (\$mine -eq \$published) { "MATCH - safe to install" } else { "DIFFERENT - do not install" }
+          \`\`\`
+
+          On **macOS and Linux**:
+
+          \`\`\`sh
+          sha256sum -c SHA256SUMS --ignore-missing      # Linux
+          shasum -a 256 -c SHA256SUMS --ignore-missing  # macOS
+
+          cosign verify-blob SHA256SUMS \\
+            --signature SHA256SUMS.sig \\
+            --certificate SHA256SUMS.pem \\
+            --certificate-identity-regexp 'https://github.com/${GITHUB_REPOSITORY}/.*' \\
             --certificate-oidc-issuer https://token.actions.githubusercontent.com
-          ```
+          \`\`\`
 
-          `BUILD-INFO.txt` names the commit and the exact Go toolchain, so you can
+          \`BUILD-INFO.txt\` names the commit and the exact Go toolchain, so you can
           rebuild these files yourself and compare. Two independent builds were
           already compared in this release's own workflow; if yours differs, please
           say so publicly.
@@ -263,6 +299,14 @@ jobs:
           warn you about these files, and they are right to** — an unsigned binary
           from the internet is exactly what those warnings are for. Verify the
           checksums and the signature above before deciding to trust it.
+
+          ## Older versions
+
+          Every release ever published is still on the
+          [releases page](https://github.com/${GITHUB_REPOSITORY}/releases), with
+          its checksums and signature intact. Nothing here is removed. If this
+          version breaks something for you, the one before it still works and
+          CHANGELOG.md says what the difference is.
           NOTES
 
           gh release create "${VERSION}" \
